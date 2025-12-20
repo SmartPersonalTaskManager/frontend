@@ -1,0 +1,57 @@
+:root {
+  /* HSL Color Tokens for easier theming */
+  /* Primary Brand - Vibrant Indigo/Violet */
+  --primary-hue: 250;
+  --primary-sat: 95%;
+  --primary-light: 65%;
+  --color-primary: hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
+  --color-primary-hover: hsl(var(--primary-hue), var(--primary-sat), 75%);
+  --color-primary-glow: hsla(var(--primary-hue), var(--primary-sat), var(--primary-light), 0.5);
+  
+  /* Deep Space Backgrounds */
+  --bg-hue: 225;
+  --bg-sat: 30%;
+  --bg-darkest: 8%;  /* #0b0e16 - Deep void */
+  --bg-darker: 12%;   /* #151926 - Secondary depth */
+  --bg-dark: 18%;     /* #202638 - Surface base */
+  
+  --color-bg-app: hsl(var(--bg-hue), var(--bg-sat), var(--bg-darkest));
+  --color-bg-surface: hsl(var(--bg-hue), var(--bg-sat), var(--bg-darker));
+  
+  /* Text */
+  --color-text-main: hsl(210, 40%, 98%);
+  --color-text-muted: hsl(215, 20%, 65%);
+  --color-text-inverted: hsl(222, 47%, 11%);
+
+  /* UI Status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Glass Effects */
+  --glass-bg: rgba(30, 41, 59, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.03);
+
+  /* Variables */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-neon: 0 0 15px var(--color-primary-glow);
+}
+
+/* Optional Light Mode Overrides (if we implement toggle later) */
+.light-mode {
+  --color-bg-app: hsl(210, 40%, 98%);
+  --color-bg-surface: hsl(0, 0%, 100%);
+  --color-text-main: hsl(222, 47%, 11%);
+  --color-text-muted: hsl(215, 16%, 47%);
+}
