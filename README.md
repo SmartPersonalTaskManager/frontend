@@ -1,16 +1,31 @@
-# React + Vite
+# SPTM / Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Smart. Personal. Task Manager.**
 
-Currently, two official plugins are available:
+A minimal, high-performance web interface for managing your life's work. Built for clarity and speed.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Stack
+- **Core**: React 19 + Vite
+- **Styling**: Vanilla CSS (Modern)
+- **Icons**: Lucide React
 
-## React Compiler
+## Quick Start
+```bash
+# Install
+npm install
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Run
+npm run dev
 
-## Expanding the ESLint configuration
+# Build
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Deployment
+Automated via GitHub Pages.
+- **Workflow**: `.github/workflows/deploy.yml`
+- **Trigger**: Push to `main`
+- **Output**: `gh-pages` branch
+
+---
+*Designed for efficiency.*
