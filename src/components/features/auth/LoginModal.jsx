@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useGoogleCalendar } from "../../../hooks/useGoogleCalendar";
+import BASE_URL from "../../../services/api";
 
 export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
     const [isSignUp, setIsSignUp] = useState(initialView === "signup");
@@ -84,7 +85,7 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
                 }
                 // ----------------------------------------
 
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api"}/auth/login`, {
+                const response = await fetch(`${BASE_URL}/auth/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -113,7 +114,7 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
 
             } else {
                 // Signup Logic
-                const response = await fetch("http://localhost:8080/api/auth/register", {
+                const response = await fetch(`${BASE_URL}/auth/register`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 const getHeaders = () => {
     const headers = {
@@ -50,3 +50,5 @@ export const api = {
         return true; // Return true on success
     },
 };
+
+export default BASE_URL;
