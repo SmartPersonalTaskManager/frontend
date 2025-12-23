@@ -27,8 +27,8 @@ export function MissionProvider({ children }) {
         return cleaned.trim();
     };
 
-    const [visions, setVisions] = useLocalStorage('sptm_visions_v2', []); // Keeping local for now as no Controller seen for Vision
-    const [values, setValues] = useLocalStorage('sptm_core_values_v2', DEMO_VALUES); // Keeping local for now as no Controller seen for Values
+    const [visions, setVisions] = useState([]);
+    const [values, setValues] = useState([]);
 
     const processMissionsData = (data) => {
         const flatMissions = [];
@@ -54,22 +54,32 @@ export function MissionProvider({ children }) {
         return flatMissions;
     };
 
-    // Fetch Missions
+    // Fetch All Data
     useEffect(() => {
-        const fetchMissions = async () => {
+        const fetchData = async () => {
             const userId = localStorage.getItem("sptm_userId");
             if (!userId) return;
 
             try {
-                const data = await api.get(`/missions/user/${userId}`);
-                const flatMissions = processMissionsData(data);
+                // Fetch Missions
+                const missionsData = await api.get(`/missions/user/${userId}`);
+                const flatMissions = processMissionsData(missionsData);
                 setMissions(flatMissions);
+
+                // Fetch Visions
+                const visionsData = await api.get(`/visions/user/${userId}`);
+                setVisions(visionsData);
+
+                // Fetch Core Values
+                const valuesData = await api.get(`/core-values/user/${userId}`);
+                setValues(valuesData);
+
             } catch (error) {
-                console.error("Failed to fetch missions:", error);
+                console.error("Failed to fetch mission data:", error);
             }
         };
 
-        fetchMissions();
+        fetchData();
     }, []);
 
     // --- Missions ---
@@ -149,27 +159,59 @@ export function MissionProvider({ children }) {
     const getSubMissions = (parentId) => missions.filter(m => m.parentId === parentId);
 
     // --- Visions ---
-    const addVision = (text) => {
-        const newVision = { id: crypto.randomUUID(), text };
-        setVisions(prev => [...prev, newVision]);
+    const addVision = async (text) => {
+        const userId = localStorage.getItem("sptm_userId");
+        if (!userId) return;
+        try {
+            const newVision = await api.post(`/visions?userId=${userId}`, text);
+            setVisions(prev => [...prev, newVision]);
+        } catch (error) {
+            console.error("Failed to add vision:", error);
+        }
     };
-    const updateVision = (id, text) => {
+    const updateVision = async (id, text) => {
         setVisions(prev => prev.map(v => v.id === id ? { ...v, text } : v));
+        try {
+            await api.put(`/visions/${id}`, text);
+        } catch (error) {
+            console.error("Failed to update vision:", error);
+        }
     };
-    const deleteVision = (id) => {
+    const deleteVision = async (id) => {
         setVisions(prev => prev.filter(v => v.id !== id));
+        try {
+            await api.delete(`/visions/${id}`);
+        } catch (error) {
+            console.error("Failed to delete vision:", error);
+        }
     };
 
     // --- Values ---
-    const addValue = (text) => {
-        const newValue = { id: crypto.randomUUID(), text };
-        setValues(prev => [...prev, newValue]);
+    const addValue = async (text) => {
+        const userId = localStorage.getItem("sptm_userId");
+        if (!userId) return;
+        try {
+            const newValue = await api.post(`/core-values?userId=${userId}`, text);
+            setValues(prev => [...prev, newValue]);
+        } catch (error) {
+            console.error("Failed to add value:", error);
+        }
     };
-    const updateValue = (id, text) => {
+    const updateValue = async (id, text) => {
         setValues(prev => prev.map(v => v.id === id ? { ...v, text } : v));
+        try {
+            await api.put(`/core-values/${id}`, text);
+        } catch (error) {
+            console.error("Failed to update value:", error);
+        }
     };
-    const deleteValue = (id) => {
+    const deleteValue = async (id) => {
         setValues(prev => prev.filter(v => v.id !== id));
+        try {
+            await api.delete(`/core-values/${id}`);
+        } catch (error) {
+            console.error("Failed to delete value:", error);
+        }
     };
 
     return (

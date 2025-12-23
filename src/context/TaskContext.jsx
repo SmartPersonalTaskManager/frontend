@@ -17,7 +17,7 @@ const DEFAULT_CONTEXTS = [
 
 export function TaskProvider({ children }) {
     const [tasks, setTasks] = useState([]);
-    const [contexts, setContexts] = useLocalStorage('sptm_contexts_v1', DEFAULT_CONTEXTS);
+    const [contexts, setContexts] = useState([]); // Removed useLocalStorage
     const [loading, setLoading] = useState(false);
 
     // Access auth state from GoogleCalendarContext
@@ -33,40 +33,70 @@ export function TaskProvider({ children }) {
         return 'NOT_STARTED';
     };
 
-    // Fetch Tasks on Load and when Authentication changes
+    // Fetch Tasks and Contexts on Load and when Authentication changes
     useEffect(() => {
-        const fetchTasks = async () => {
+        const fetchData = async () => {
             const userId = localStorage.getItem("sptm_userId");
             if (!userId) {
-                setTasks([]); // Clear tasks if no user
+                setTasks([]);
+                setContexts([]);
                 return;
             }
 
             try {
                 setLoading(true);
-                const data = await api.get(`/tasks/user/${userId}`);
-                // Adapter: Backend DTO -> Frontend
-                const adaptedTasks = data.map(t => ({
+                // Fetch Tasks
+                const tasksData = await api.get(`/tasks/user/${userId}`);
+                const adaptedTasks = tasksData.map(t => ({
                     ...t,
                     status: mapBackendStatusToFrontend(t.status),
                     urge: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'URGENT_NOT_IMPORTANT'),
                     imp: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'NOT_URGENT_IMPORTANT'),
                     missionId: t.subMissionId || null,
-                    // Persist backend fields
-                    context: t.context || '@home', // Default if missing
+                    context: t.context || '@home',
                     isInbox: t.isInbox,
                     isArchived: t.isArchived,
                     completedAt: t.completedAt
                 }));
                 setTasks(adaptedTasks);
+
+                // Fetch Contexts
+                const contextsData = await api.get(`/contexts/user/${userId}`);
+                if (contextsData && contextsData.length > 0) {
+                    setContexts(contextsData);
+                } else {
+                    // Start with defaults if empty, but don't save automatically to DB unless requested?
+                    // Better to just show defaults if empty locally or seed DB.
+                    // Let's seed defaults into DB if empty for better persistence experience
+                    // Or just use defaults in memory if DB is empty?
+                    // The user wants EVERYTHING in DB.
+                    // So we should probably let them be empty or initialize explicitly.
+                    // For now, let's just set the state. If empty, the UI will show empty. 
+                    // To auto-initialize defaults:
+                    // We can call a function to seed defaults here, but let's stick to fetch for now.
+                    // If empty, let's fallback to defaults in UI only or ask user?
+                    // Let's assume if it's empty, we might want to check if it's a new user.
+                    // For now, if empty, we set empty. If user wants defaults, they can hit "Restore".
+                    // Actually, let's check if we should show defaults for new users.
+                    // If length is 0, we can setContexts(DEFAULT_CONTEXTS) but this won't persist to DB until used?
+                    // No, `contexts` state is used for display. 
+                    // Let's just set what limits we get.
+                    setContexts(contextsData);
+
+                    // IF we want to force defaults:
+                    if (contextsData.length === 0) {
+                        // Optional: auto-seed logic could go here
+                        // For now, let's manually restore if needed.
+                    }
+                }
             } catch (error) {
-                console.error("Failed to fetch tasks:", error);
+                console.error("Failed to fetch data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTasks();
+        fetchData();
     }, [isAuthenticated]);
 
     const addTask = async (taskData) => {
@@ -76,8 +106,6 @@ export function TaskProvider({ children }) {
             return;
         }
 
-        // Format date to ISO-like string compatible with LocalDateTime (YYYY-MM-DDTHH:mm:ss)
-        // input[type="date"] returns YYYY-MM-DD. We append T00:00:00 to imply start of day local time.
         let formattedDate = taskData.dueDate;
         if (formattedDate && !formattedDate.includes('T')) {
             formattedDate = `${formattedDate}T00:00:00`;
@@ -86,7 +114,7 @@ export function TaskProvider({ children }) {
         const newTaskPayload = {
             ...taskData,
             userId: parseInt(userId),
-            status: 'NOT_STARTED', // Backend enum compatible
+            status: 'NOT_STARTED',
             createdAt: new Date().toISOString(),
             timeSpent: 0,
             title: taskData.title,
@@ -95,7 +123,6 @@ export function TaskProvider({ children }) {
             subMissionId: taskData.missionId,
             description: taskData.description || "",
             dueDate: formattedDate,
-            // New fields
             context: taskData.context || '@home',
             isInbox: taskData.isInbox || false,
             isArchived: taskData.isArchived || false
@@ -103,7 +130,6 @@ export function TaskProvider({ children }) {
 
         try {
             const createdTask = await api.post('/tasks', newTaskPayload);
-            // Adapt response back for state
             const adaptedTask = {
                 ...createdTask,
                 status: mapBackendStatusToFrontend(createdTask.status),
@@ -123,21 +149,14 @@ export function TaskProvider({ children }) {
     };
 
     const updateTask = async (id, updates) => {
-        // Optimistic update
         setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
 
         try {
             const currentTask = tasks.find(t => t.id === id);
             if (!currentTask) return;
 
-            console.log('updateTask - currentTask:', currentTask);
-            console.log('updateTask - updates:', updates);
-
-            // Merge and adapt for backend
             const merged = { ...currentTask, ...updates };
-            console.log('updateTask - merged:', merged);
 
-            // Format date if it was updated
             let formattedDate = merged.dueDate;
             if (formattedDate && !formattedDate.includes('T')) {
                 formattedDate = `${formattedDate}T00:00:00`;
@@ -148,29 +167,19 @@ export function TaskProvider({ children }) {
                 status: mapFrontendStatusToBackend(merged.status),
                 subMissionId: merged.missionId,
                 dueDate: formattedDate,
-                // Ensure extended fields are sent
                 context: merged.context,
                 isInbox: merged.isInbox,
                 isArchived: merged.isArchived,
                 completedAt: merged.completedAt
-                // Priority is updated by backend if urge/imp changed, or we can send priority enum if we wanted.
-                // But DTO has urgent/important fields which service uses.
-                // If we only updated status, urge/imp might be missing from 'updates'.
-                // 'merged' has them.
-                // We need to ensure 'urgent' and 'important' are sent as booleans if we want to support editing them seamlessly.
             };
 
-            console.log('Updating task with payload:', payload);
-            console.log('isArchived:', payload.isArchived, 'completedAt:', payload.completedAt);
-            const response = await api.put(`/tasks/${id}`, payload);
-            console.log('Update response:', response);
+            await api.put(`/tasks/${id}`, payload);
         } catch (error) {
             console.error("Failed to update task:", error);
         }
     };
 
     const deleteTask = async (id) => {
-        // Optimistic delete
         setTasks(prev => prev.filter(t => t.id !== id));
         try {
             await api.delete(`/tasks/${id}`);
@@ -192,14 +201,11 @@ export function TaskProvider({ children }) {
         await updateTask(id, updates);
     };
 
-    // Alias for backward compatibility
     const archiveTask = async (id) => {
-        console.log('archiveTask called for id:', id);
         const updates = {
             isArchived: true,
             completedAt: new Date().toISOString()
         };
-        console.log('archiveTask updates:', updates);
         await updateTask(id, updates);
     };
 
@@ -209,17 +215,41 @@ export function TaskProvider({ children }) {
 
     const deletePermanently = deleteTask;
 
-    const addContext = (name, icon = '🏷️') => {
-        const newContext = { id: crypto.randomUUID(), name, icon };
-        setContexts(prev => [...prev, newContext]);
+    const addContext = async (name, icon = '🏷️') => {
+        const userId = localStorage.getItem("sptm_userId");
+        if (!userId) return;
+
+        try {
+            const newContext = await api.post(`/contexts?userId=${userId}`, { name, icon });
+            setContexts(prev => [...prev, newContext]);
+        } catch (error) {
+            console.error("Failed to add context:", error);
+        }
     };
 
-    const deleteContext = (id) => {
+    const deleteContext = async (id) => {
         setContexts(prev => prev.filter(c => c.id !== id));
+        try {
+            await api.delete(`/contexts/${id}`);
+        } catch (error) {
+            console.error("Failed to delete context:", error);
+        }
     };
 
-    const restoreContexts = () => {
-        setContexts(DEFAULT_CONTEXTS);
+    const restoreContexts = async () => {
+        const userId = localStorage.getItem("sptm_userId");
+        if (!userId) return;
+
+        // Add all defaults to DB
+        for (const ctx of DEFAULT_CONTEXTS) {
+            try {
+                // Check if already exists? Too expensive. Just simplified:
+                const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name, icon: ctx.icon });
+                setContexts(prev => [...prev, newContext]);
+            } catch (e) {
+                console.error("Error restoring context", e);
+            }
+        }
     };
 
     return (
