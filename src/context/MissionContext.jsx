@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage'; // Still using for values/visions for now or fully remove if we want full strictness
 import { api } from '../services/api';
+import { GoogleCalendarContext } from './GoogleCalendarContext';
 
 const MissionContext = createContext();
 
@@ -18,6 +19,8 @@ const DEMO_VALUES = [
 
 export function MissionProvider({ children }) {
     const [missions, setMissions] = useState([]);
+    const { isAuthenticated } = useContext(GoogleCalendarContext);
+
     const cleanString = (str) => {
         if (!str) return "";
         // Remove surrounding quotes if they exist
@@ -58,7 +61,13 @@ export function MissionProvider({ children }) {
     useEffect(() => {
         const fetchData = async () => {
             const userId = localStorage.getItem("sptm_userId");
-            if (!userId) return;
+            if (!userId) {
+                // Clear state on logout
+                setMissions([]);
+                setVisions([]);
+                setValues([]);
+                return;
+            }
 
             try {
                 // Fetch Missions
@@ -80,7 +89,7 @@ export function MissionProvider({ children }) {
         };
 
         fetchData();
-    }, []);
+    }, [isAuthenticated]);
 
     // --- Missions ---
     const addMission = async (text, parentId = null) => {
