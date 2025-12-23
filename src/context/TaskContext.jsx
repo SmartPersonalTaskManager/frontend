@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { api } from '../services/api';
+import { GoogleCalendarContext } from './GoogleCalendarContext';
 
 const TaskContext = createContext();
 
@@ -16,8 +17,11 @@ const DEFAULT_CONTEXTS = [
 
 export function TaskProvider({ children }) {
     const [tasks, setTasks] = useState([]);
-    const [contexts, setContexts] = useLocalStorage('sptm_contexts_v1', DEFAULT_CONTEXTS); // Contexts still local for now, or can be moved to backend if Entity exists
+    const [contexts, setContexts] = useLocalStorage('sptm_contexts_v1', DEFAULT_CONTEXTS);
     const [loading, setLoading] = useState(false);
+
+    // Access auth state from GoogleCalendarContext
+    const { isAuthenticated } = useContext(GoogleCalendarContext);
 
     const mapBackendStatusToFrontend = (status) => {
         if (status === 'COMPLETED') return 'done';
@@ -29,11 +33,14 @@ export function TaskProvider({ children }) {
         return 'NOT_STARTED';
     };
 
-    // Fetch Tasks on Load
+    // Fetch Tasks on Load and when Authentication changes
     useEffect(() => {
         const fetchTasks = async () => {
             const userId = localStorage.getItem("sptm_userId");
-            if (!userId) return;
+            if (!userId) {
+                setTasks([]); // Clear tasks if no user
+                return;
+            }
 
             try {
                 setLoading(true);
@@ -60,7 +67,7 @@ export function TaskProvider({ children }) {
         };
 
         fetchTasks();
-    }, []);
+    }, [isAuthenticated]);
 
     const addTask = async (taskData) => {
         const userId = localStorage.getItem("sptm_userId");

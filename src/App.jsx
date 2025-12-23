@@ -290,9 +290,7 @@ function AppContent() {
 
 function App() {
   return (
-    <GoogleCalendarProvider>
-      <AppContent />
-    </GoogleCalendarProvider>
+    <AppContent />
   );
 }
 
