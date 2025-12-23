@@ -2,6 +2,15 @@
   command = "npm run build"
   publish = "dist"
 
+[context.production.environment]
+  VITE_BACKEND_URL = "https://sptm-backend.onrender.com"
+
+[context.deploy-preview.environment]
+  VITE_BACKEND_URL = "https://sptm-backend.onrender.com"
+
+[context.branch-deploy.environment]
+  VITE_BACKEND_URL = "https://sptm-backend.onrender.com"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
