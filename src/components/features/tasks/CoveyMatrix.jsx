@@ -798,13 +798,22 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                                                     gap: '0.6rem',
                                                     background: form.context === c.name ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
                                                     color: form.context === c.name ? 'white' : 'var(--color-text-muted)',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    transition: 'background 0.2s'
                                                 }}
                                             >
-                                                <span style={{ fontSize: '1rem' }}>{c.icon}</span>
+                                                <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
                                                 {c.name}
                                             </button>
                                         ))}
+                                        {contexts.length === 0 && (
+                                            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                                                No contexts found.
+                                            </div>
+                                        )}
                                     </div>
+
                                 </>
                             )}
                         </div>
@@ -822,8 +831,8 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                     >
                         Create Task
                     </button>
-                </form>
-            </div>
-        </div>
+                </form >
+            </div >
+        </div >
     );
 }

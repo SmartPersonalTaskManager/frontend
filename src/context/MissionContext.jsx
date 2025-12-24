@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage'; // Still using for values/visions for now or fully remove if we want full strictness
 import { api } from '../services/api';
 import { GoogleCalendarContext } from './GoogleCalendarContext';
 
@@ -134,8 +133,16 @@ export function MissionProvider({ children }) {
         }));
 
         try {
-            // API Call
-            await api.put(`/missions/${id}`, newText);
+            // Find mission to check if it's a submission
+            const missionToUpdate = missions.find(m => m.id === id);
+
+            if (missionToUpdate && missionToUpdate.parentId) {
+                // Is a SubMission
+                await api.put(`/missions/submissions/${id}`, newText);
+            } else {
+                // Is a Root Mission
+                await api.put(`/missions/${id}`, newText);
+            }
         } catch (error) {
             console.error("Failed to update mission:", error);
             // Revert todo?

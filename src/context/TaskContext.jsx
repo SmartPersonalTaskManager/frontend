@@ -65,29 +65,23 @@ export function TaskProvider({ children }) {
                 if (contextsData && contextsData.length > 0) {
                     setContexts(contextsData);
                 } else {
-                    // Start with defaults if empty, but don't save automatically to DB unless requested?
-                    // Better to just show defaults if empty locally or seed DB.
-                    // Let's seed defaults into DB if empty for better persistence experience
-                    // Or just use defaults in memory if DB is empty?
-                    // The user wants EVERYTHING in DB.
-                    // So we should probably let them be empty or initialize explicitly.
-                    // For now, let's just set the state. If empty, the UI will show empty. 
-                    // To auto-initialize defaults:
-                    // We can call a function to seed defaults here, but let's stick to fetch for now.
-                    // If empty, let's fallback to defaults in UI only or ask user?
-                    // Let's assume if it's empty, we might want to check if it's a new user.
-                    // For now, if empty, we set empty. If user wants defaults, they can hit "Restore".
-                    // Actually, let's check if we should show defaults for new users.
-                    // If length is 0, we can setContexts(DEFAULT_CONTEXTS) but this won't persist to DB until used?
-                    // No, `contexts` state is used for display. 
-                    // Let's just set what limits we get.
-                    setContexts(contextsData);
+                    // EmptyDB -> Auto-seed defaults for better UX
+                    console.log("No contexts found, seeding defaults...");
+                    // We can re-use restoreContexts logic but we need access to it or duplicated logic.
+                    // Since restoreContexts is defined below, we can't call it easily inside useEffect unless we move it or use a separate function.
+                    // Let's just do it inline or define a helper outside.
+                    // Actually, let's just use the restore logic here.
 
-                    // IF we want to force defaults:
-                    if (contextsData.length === 0) {
-                        // Optional: auto-seed logic could go here
-                        // For now, let's manually restore if needed.
+                    const newContexts = [];
+                    for (const ctx of DEFAULT_CONTEXTS) {
+                        try {
+                            const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name, icon: ctx.icon });
+                            newContexts.push(newContext);
+                        } catch (e) {
+                            console.error("Error seeding context", e);
+                        }
                     }
+                    setContexts(newContexts);
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
