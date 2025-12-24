@@ -35,12 +35,31 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
                     }
                 ).then((res) => res.json());
 
+                // Authenticate with Backend to get persistent User ID
+                const backendResponse = await fetch(`${BASE_URL}/auth/google`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: userInfo.email,
+                        name: userInfo.name,
+                        photoUrl: userInfo.picture
+                    }),
+                });
+
+                if (!backendResponse.ok) {
+                    throw new Error("Backend authentication failed");
+                }
+
+                const backendData = await backendResponse.json();
+
                 const user = {
+                    id: backendData.id, // Critical: Only this ID works for persistence!
                     name: userInfo.name,
                     email: userInfo.email,
                     picture: userInfo.picture,
                     credential: tokenResponse.access_token,
-                    accessToken: tokenResponse.access_token // Explicitly pass as accessToken
+                    accessToken: tokenResponse.access_token,
+                    jwt: backendData.token
                 };
 
                 loginUser(user);

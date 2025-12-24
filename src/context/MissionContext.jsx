@@ -4,17 +4,7 @@ import { GoogleCalendarContext } from './GoogleCalendarContext';
 
 const MissionContext = createContext();
 
-const DEMO_MISSIONS = [
-    { id: 'm1', text: "To lead a life centered on integrity and empathy, inspiring others to grow.", parentId: null, createdAt: new Date().toISOString(), versions: [] },
-    { id: 'm2', text: "To innovate relentlessly and solve complex problems with elegant simplicity.", parentId: null, createdAt: new Date().toISOString(), versions: [] },
-    { id: 'm3', text: "To cultivate deep connections and maintain a harmonious work-life balance.", parentId: null, createdAt: new Date().toISOString(), versions: [] }
-];
 
-const DEMO_VALUES = [
-    { id: 'v1', text: "Integrity & Honesty" },
-    { id: 'v2', text: "Continuous Growth" },
-    { id: 'v3', text: "Empathy & Respect" }
-];
 
 export function MissionProvider({ children }) {
     const [missions, setMissions] = useState([]);
