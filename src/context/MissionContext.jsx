@@ -172,7 +172,7 @@ export function MissionProvider({ children }) {
         const userId = localStorage.getItem("sptm_userId");
         if (!userId) return;
         try {
-            const newVision = await api.post(`/visions?userId=${userId}`, text);
+            const newVision = await api.post(`/visions?userId=${userId}`, { text });
             setVisions(prev => [...prev, newVision]);
         } catch (error) {
             console.error("Failed to add vision:", error);
@@ -181,7 +181,7 @@ export function MissionProvider({ children }) {
     const updateVision = async (id, text) => {
         setVisions(prev => prev.map(v => v.id === id ? { ...v, text } : v));
         try {
-            await api.put(`/visions/${id}`, text);
+            await api.put(`/visions/${id}`, { text });
         } catch (error) {
             console.error("Failed to update vision:", error);
         }
@@ -200,7 +200,7 @@ export function MissionProvider({ children }) {
         const userId = localStorage.getItem("sptm_userId");
         if (!userId) return;
         try {
-            const newValue = await api.post(`/core-values?userId=${userId}`, text);
+            const newValue = await api.post(`/core-values?userId=${userId}`, { text });
             setValues(prev => [...prev, newValue]);
         } catch (error) {
             console.error("Failed to add value:", error);
@@ -209,7 +209,7 @@ export function MissionProvider({ children }) {
     const updateValue = async (id, text) => {
         setValues(prev => prev.map(v => v.id === id ? { ...v, text } : v));
         try {
-            await api.put(`/core-values/${id}`, text);
+            await api.put(`/core-values/${id}`, { text });
         } catch (error) {
             console.error("Failed to update value:", error);
         }
