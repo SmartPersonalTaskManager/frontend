@@ -98,7 +98,7 @@ function MissionViewContent({
     addMission, addValue, updateValue, deleteValue, addVision, updateVision, deleteVision
 }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1200px', margin: '0' }}>
 
             {/* 1. HERO: Personal Mission Statement */}
             {/* 1. HERO: Mission Statement Content */}
