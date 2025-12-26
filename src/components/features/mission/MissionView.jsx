@@ -124,7 +124,7 @@ function MissionViewContent({
                     <Compass size={22} className="text-primary" />
                     <span>Inner Compass</span>
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                <div style={{ maxWidth: '600px' }}>
                     {/* Core Values */}
                     <ListSection
                         title="Core Values"
@@ -137,24 +137,10 @@ function MissionViewContent({
                         emptyMessage="What principles guide you?"
                         accentColor="rgba(239, 68, 68, 0.1)"
                     />
-
-                    {/* Vision */}
-                    <ListSection
-                        title="Long-term Vision"
-                        icon={<Compass size={18} style={{ color: '#8b5cf6' }} />}
-                        items={safeVisions}
-                        onAdd={addVision}
-                        onUpdate={updateVision}
-                        onDelete={deleteVision}
-                        placeholder="Add a vision statement..."
-                        emptyMessage="Where do you see yourself in 5 years?"
-                        accentColor="rgba(139, 92, 246, 0.1)"
-                    />
                 </div>
             </section>
 
-            {/* 3. TRACKING: Progress */}
-            <MissionProgressSection values={safeValues} visions={safeVisions} />
+
         </div>
     );
 }
