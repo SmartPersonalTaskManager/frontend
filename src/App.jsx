@@ -132,13 +132,16 @@ function AppContent() {
   // Backend Status Functions
   const checkBackendStatus = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      // Any HTTP response (even 403/404) means backend is running
+      await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      setBackendStatus(response.ok ? 'active' : 'sleeping');
-      return response.ok;
+      // If we get here, backend responded (active!)
+      setBackendStatus('active');
+      return true;
     } catch (error) {
+      // Network error = backend sleeping or unreachable
       setBackendStatus('sleeping');
       return false;
     }
@@ -155,14 +158,14 @@ function AppContent() {
     }, 1000);
 
     try {
-      // Try pinging the backend (login endpoint is public)
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      // Any HTTP response means backend is awake
+      await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
 
       clearInterval(durationInterval);
-      setBackendStatus(response.ok ? 'active' : 'sleeping');
+      setBackendStatus('active');
       setBackendWaking(false);
       setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
     } catch (error) {
