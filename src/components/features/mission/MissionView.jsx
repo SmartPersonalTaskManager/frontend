@@ -437,71 +437,99 @@ function MissionCard({ mission, isRoot }) {
         <div
             className="glass-panel"
             style={{
-                padding: '2rem',
+                padding: '0',
                 borderRadius: 'var(--radius-lg)',
-                marginBottom: '1rem',
-                borderLeft: '4px solid var(--color-primary)',
-                background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))'
+                overflow: 'hidden'
             }}
         >
+            {/* Header - Like Values section */}
             <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem' }}
+                style={{
+                    padding: '1.25rem',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    {isEditing ? (
-                        <div>
-                            <textarea
-                                value={editText}
-                                onChange={e => setEditText(e.target.value)}
-                                style={{ width: '100%', minHeight: '100px', padding: '1rem', background: 'rgba(0,0,0,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--radius-md)', fontSize: '1.2rem', fontFamily: 'inherit' }}
-                            />
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <button className="btn btn-primary" onClick={handleSave}>Save Mission</button>
-                                <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div>
-                            <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Ultimate Objective</div>
-                            <div style={{
-                                fontSize: '1.75rem',
-                                lineHeight: 1.3,
-                                fontWeight: 700,
-                                letterSpacing: '-0.5px',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical',
+                {isEditing ? (
+                    <div style={{ flex: 1, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                            autoFocus
+                            type="text"
+                            value={editText}
+                            onChange={e => setEditText(e.target.value)}
+                            style={{
+                                flex: 1,
+                                padding: '0.5rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(0,0,0,0.3)',
+                                color: 'white',
+                                fontSize: '1.1rem',
+                                fontWeight: 600
+                            }}
+                            onKeyDown={e => e.key === 'Enter' && handleSave()}
+                        />
+                        <button className="btn btn-ghost success" onClick={handleSave}><Check size={18} /></button>
+                        <button className="btn btn-ghost" onClick={() => setIsEditing(false)}><X size={18} /></button>
+                    </div>
+                ) : (
+                    <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                            <Target size={20} className="text-primary" />
+                            <h3 style={{
+                                fontSize: '1.1rem',
+                                margin: 0,
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
                                 overflow: 'hidden',
-                                wordBreak: 'break-word'
+                                textOverflow: 'ellipsis'
                             }}>
                                 {mission.text}
-                            </div>
+                            </h3>
                         </div>
-                    )}
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
-                    <button className="btn btn-ghost" onClick={() => setIsEditing(true)} title="Edit Mission">
-                        <Edit2 size={18} />
-                    </button>
-                    <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(true)} title="Delete Mission" style={{ color: '#ef4444' }}>
-                        <Trash2 size={18} />
-                    </button>
-                </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setIsEditing(true)}
+                                title="Edit Mission"
+                                style={{
+                                    background: 'rgba(255,255,255,0.1)',
+                                    width: '32px',
+                                    height: '32px',
+                                    padding: 0,
+                                    borderRadius: '50%'
+                                }}
+                            >
+                                <Edit2 size={16} />
+                            </button>
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                title="Delete Mission"
+                                style={{
+                                    color: '#ef4444',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    width: '32px',
+                                    height: '32px',
+                                    padding: 0,
+                                    borderRadius: '50%'
+                                }}
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
 
-            {/* Submissions Grid */}
-            <div style={{
-                marginTop: '1.5rem',
-                paddingTop: '1.5rem',
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Content - Submissions */}
+            <div style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                     <h4 style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Submissions</h4>
                     <button
                         className="btn btn-ghost"
@@ -523,7 +551,7 @@ function MissionCard({ mission, isRoot }) {
                 </div>
 
                 {isAddingChild && (
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
                         <input
                             autoFocus
                             type="text"
