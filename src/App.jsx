@@ -64,8 +64,10 @@ function AppContent() {
 
 
 
-  const { loadDemoData, isLoading: isDemoLoading } = useDemoLoader();
+  const { loadDemoData, clearAllData, isLoading: isDemoLoading } = useDemoLoader();
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
+  const [showInjectConfirm, setShowInjectConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Check for first-time login (Fresh User)
   useEffect(() => {
@@ -396,31 +398,244 @@ function AppContent() {
               <section style={{ marginBottom: "2rem" }}>
                 <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Data & Testing</h3>
                 <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                  {/* Sample Workspace Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
                       <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Sample Workspace</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Populate the application with sample missions and tasks.</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Replace all data with sample missions and tasks.</div>
                     </div>
                     <button
-                      onClick={loadDemoData}
+                      onClick={() => setShowInjectConfirm(true)}
                       disabled={isDemoLoading}
                       style={{
                         padding: "0.5rem 1rem",
-                        background: "#a855f7",
+                        background: isDemoLoading ? "rgba(168, 85, 247, 0.5)" : "#a855f7",
                         color: "white",
                         border: "none",
                         borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
+                        cursor: isDemoLoading ? "not-allowed" : "pointer",
                         fontWeight: 600,
-                        opacity: isDemoLoading ? 0.7 : 1,
-                        transition: 'background 0.2s'
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
                       }}
                     >
-                      {isDemoLoading ? 'Loading...' : 'Inject Data'}
+                      {isDemoLoading ? (
+                        <>
+                          <span className="loading-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite'
+                          }}></span>
+                          Loading...
+                        </>
+                      ) : 'Inject Data'}
+                    </button>
+                  </div>
+
+                  {/* Clear All Data Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem', color: '#ef4444' }}>Clear All Data</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Delete all tasks and missions permanently.</div>
+                    </div>
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      disabled={isDemoLoading}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "rgba(239, 68, 68, 0.1)",
+                        color: "#ef4444",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        borderRadius: "var(--radius-md)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
+                    >
+                      Clear Data
                     </button>
                   </div>
                 </div>
               </section>
+
+              {/* Inject Confirmation Modal */}
+              {showInjectConfirm && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000
+                }}>
+                  <div style={{
+                    background: '#1e293b',
+                    padding: '2rem',
+                    borderRadius: '16px',
+                    maxWidth: '400px',
+                    width: '90%',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Replace All Data?</h3>
+                    </div>
+                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                      This will <strong style={{ color: '#ef4444' }}>permanently delete</strong> all your current tasks and missions, then replace them with sample data.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => setShowInjectConfirm(false)}
+                        style={{
+                          padding: '0.6rem 1.25rem',
+                          background: 'transparent',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setShowInjectConfirm(false);
+                          await loadDemoData();
+                        }}
+                        style={{
+                          padding: '0.6rem 1.25rem',
+                          background: '#a855f7',
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: 'white',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        Yes, Replace All
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Confirmation Modal */}
+              {showClearConfirm && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000
+                }}>
+                  <div style={{
+                    background: '#1e293b',
+                    padding: '2rem',
+                    borderRadius: '16px',
+                    maxWidth: '400px',
+                    width: '90%',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🗑️</span>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#ef4444' }}>Delete All Data?</h3>
+                    </div>
+                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                      This will <strong style={{ color: '#ef4444' }}>permanently delete</strong> all your tasks and missions. This action cannot be undone.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => setShowClearConfirm(false)}
+                        style={{
+                          padding: '0.6rem 1.25rem',
+                          background: 'transparent',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setShowClearConfirm(false);
+                          await clearAllData();
+                        }}
+                        style={{
+                          padding: '0.6rem 1.25rem',
+                          background: '#ef4444',
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: 'white',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        Yes, Delete All
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading Overlay */}
+              {isDemoLoading && (
+                <div style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(5, 5, 10, 0.85)',
+                  backdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1001
+                }}>
+                  <style>{`
+                    @keyframes pulse {
+                      0%, 100% { transform: scale(1); opacity: 0.8; }
+                      50% { transform: scale(1.1); opacity: 1; }
+                    }
+                    @keyframes spin {
+                      from { transform: rotate(0deg); }
+                      to { transform: rotate(360deg); }
+                    }
+                  `}</style>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    boxShadow: '0 0 60px rgba(168, 85, 247, 0.5)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                    marginBottom: '1.5rem'
+                  }} />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, color: '#fff', marginBottom: '0.5rem' }}>
+                    Setting up your workspace...
+                  </h3>
+                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
+                    Planting seeds for your missions
+                  </p>
+                </div>
+              )}
 
               <div style={{ color: "var(--color-text-muted)", fontSize: "0.85rem", textAlign: "center", marginTop: "4rem", opacity: 0.5 }}>
                 SPTM System v2.0 • Build 2024.12

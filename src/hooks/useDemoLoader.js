@@ -4,14 +4,53 @@ import { useMission } from '../context/MissionContext';
 import { DEMO_DATA } from '../utils/demoData';
 
 export function useDemoLoader() {
-    const { addTask } = useTasks();
-    const { addVision, addValue, addMission } = useMission();
+    const { addTask, tasks, deleteTask } = useTasks();
+    const { addVision, addValue, addMission, missions, deleteMission } = useMission();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Clear all existing data
+    const clearAllData = async () => {
+        console.log('🗑️ Clearing all existing data...');
+
+        // Delete all tasks
+        if (tasks && tasks.length > 0) {
+            console.log(`  Deleting ${tasks.length} tasks...`);
+            for (const task of tasks) {
+                try {
+                    await deleteTask(task.id);
+                } catch (e) {
+                    console.error('Failed to delete task:', task.id, e);
+                }
+            }
+        }
+
+        // Delete all missions (will cascade delete submissions)
+        if (missions && missions.length > 0) {
+            // Get root missions first (those without parent)
+            const rootMissions = missions.filter(m => !m.parentId);
+            console.log(`  Deleting ${rootMissions.length} root missions...`);
+            for (const mission of rootMissions) {
+                try {
+                    await deleteMission(mission.id);
+                } catch (e) {
+                    console.error('Failed to delete mission:', mission.id, e);
+                }
+            }
+        }
+
+        console.log('✅ All data cleared');
+    };
 
     const loadDemoData = async () => {
         console.log('🚀 Starting demo data load...');
         setIsLoading(true);
         try {
+            // First, clear all existing data
+            await clearAllData();
+
+            // Small delay to ensure backend processes deletes
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             // 1. Add Values (Independent)
             console.log('📌 Loading values...');
             if (DEMO_DATA.values) {
@@ -85,5 +124,6 @@ export function useDemoLoader() {
         }
     };
 
-    return { loadDemoData, isLoading };
+    return { loadDemoData, clearAllData, isLoading };
 }
+
