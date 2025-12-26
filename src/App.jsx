@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
 import MissionView from "./components/features/mission/MissionView";
 import CoveyMatrix from "./components/features/tasks/CoveyMatrix";
@@ -17,6 +17,7 @@ import { useTasks } from './context/TaskContext';
 import TaskCard from './components/features/tasks/TaskCard';
 import Sidebar from "./components/layout/Sidebar";
 import WelcomePage from "./components/layout/WelcomePage";
+import { useDemoLoader } from "./hooks/useDemoLoader";
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -61,9 +62,38 @@ function AppContent() {
     }
   };
 
+
+  const { loadDemoData, isLoading: isDemoLoading } = useDemoLoader();
+  const [showDemoPrompt, setShowDemoPrompt] = useState(false);
+
+  // Check for first-time login prompt
+  useEffect(() => {
+    const hasSeenPrompt = localStorage.getItem("sptm_demo_prompt_shown");
+    const userId = localStorage.getItem("sptm_userId");
+    // Only show if user is logged in and hasn't seen prompt
+    if (isAuthenticated && userId && !hasSeenPrompt) {
+      // Small delay to let UI settle
+      const timer = setTimeout(() => {
+        setShowDemoPrompt(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated]);
+
+  const handleInitialDemoLoad = async (shouldLoad) => {
+    localStorage.setItem("sptm_demo_prompt_shown", "true");
+    setShowDemoPrompt(false);
+    if (shouldLoad) {
+      await loadDemoData();
+    }
+  };
+
+
   if (!isAuthenticated) {
     return <WelcomePage />;
   }
+
+
 
   return (
     <div
@@ -93,6 +123,68 @@ function AppContent() {
             zIndex: -1,
           }}
         />
+
+        {/* --- Demo Data Prompt Modal --- */}
+        {showDemoPrompt && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100
+          }}>
+            <div className="glass-panel" style={{
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '90%',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+            }}>
+              <h3 className="text-gradient-primary" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Welcome to SPTM! 🚀</h3>
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                To help you get started and understand how the system works, would you like to load some <strong>Demo Data</strong>?
+                <br /><br />
+                This will populate your dashboard with example missions, visions, and tasks. You can always delete them later or add more from the Settings menu.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => handleInitialDemoLoad(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--color-text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  No, start fresh
+                </button>
+                <button
+                  onClick={() => handleInitialDemoLoad(true)}
+                  disabled={isDemoLoading}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'white',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    opacity: isDemoLoading ? 0.7 : 1
+                  }}
+                >
+                  {isDemoLoading ? 'Loading...' : 'Yes, Load Demo Data'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {activeTab !== "settings" && (
           <header
@@ -274,6 +366,35 @@ function AppContent() {
                   >
                     Sign Out
                   </button>
+                </div>
+              </section>
+
+              <section style={{ marginBottom: "2rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Data & Testing</h3>
+                <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Load Demo Data</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Populate the application with sample missions and tasks.</div>
+                    </div>
+                    <button
+                      onClick={loadDemoData}
+                      disabled={isDemoLoading}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        background: "#a855f7",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "var(--radius-md)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        opacity: isDemoLoading ? 0.7 : 1,
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      {isDemoLoading ? 'Loading...' : 'Inject Data'}
+                    </button>
+                  </div>
                 </div>
               </section>
 

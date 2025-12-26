@@ -31,29 +31,6 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
         try {
             if (!isSignUp) {
                 // Login Logic
-
-                // --- MOCK LOGIN FOR GITHUB PAGES DEMO ---
-                // If the user tries to login as 'admin' with password '1234', we bypass the backend.
-                if ((formData.email === "admin" || formData.email === "admin@test.com") && formData.password === "1234") {
-                    console.log("Mock login triggered");
-
-                    // Simulate network delay
-                    await new Promise(resolve => setTimeout(resolve, 800));
-
-                    const mockUser = {
-                        id: "mock-admin-id",
-                        name: "Test Admin",
-                        email: formData.email,
-                        picture: null,
-                        credential: "mock-jwt-token-for-testing",
-                    };
-
-                    loginUser(mockUser);
-                    onClose();
-                    return; // Stop execution here, don't hit the API
-                }
-                // ----------------------------------------
-
                 const response = await fetch(`${BASE_URL}/auth/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
