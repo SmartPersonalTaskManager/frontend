@@ -514,50 +514,111 @@ function AppContent() {
                 </div>
               </section>
 
-              {/* Backend Status Section */}
               <section style={{ marginBottom: "2rem" }}>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Backend Status</h3>
+                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Utilities</h3>
                 <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
 
+                  {/* Sample Workspace Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Sample Workspace</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Replace all data with sample missions and tasks.</div>
+                    </div>
+                    <button
+                      onClick={() => setShowInjectConfirm(true)}
+                      disabled={isDemoLoading}
+                      style={{
+                        height: "42px",
+                        minWidth: "140px",
+                        padding: "0 1rem",
+                        background: isDemoLoading ? "rgba(168, 85, 247, 0.2)" : "rgba(168, 85, 247, 0.1)",
+                        color: "#b57bfc",
+                        border: "1px solid rgba(168, 85, 247, 0.2)",
+                        borderRadius: "var(--radius-md)",
+                        cursor: isDemoLoading ? "not-allowed" : "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
+                      }}
+                      onMouseEnter={(e) => !isDemoLoading && (e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)")}
+                      onMouseLeave={(e) => !isDemoLoading && (e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)")}
+                    >
+                      {isDemoLoading ? (
+                        <>
+                          <span className="loading-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite'
+                          }}></span>
+                          Loading...
+                        </>
+                      ) : 'Load Data'}
+                    </button>
+                  </div>
+
+                  {/* Clear All Data Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Clear All Data</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Delete all tasks and missions permanently.</div>
+                    </div>
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      disabled={isDemoLoading}
+                      style={{
+                        height: "42px",
+                        minWidth: "140px",
+                        padding: "0 1rem",
+                        background: "rgba(239, 68, 68, 0.1)",
+                        color: "#f87171",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        borderRadius: "var(--radius-md)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
+                    >
+                      Clear Data
+                    </button>
+                  </div>
+
+                  {/* Backend Status Row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                        <div style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          background: backendStatus === 'active' ? '#10b981' : backendStatus === 'waking' ? '#f59e0b' : '#ef4444',
-                          boxShadow: backendStatus === 'active' ? '0 0 8px #10b981' : backendStatus === 'waking' ? '0 0 8px #f59e0b' : 'none',
-                          animation: backendStatus === 'waking' ? 'pulse 1.5s infinite' : 'none'
-                        }}></div>
-                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>
-                          {backendStatus === 'active' && 'Backend Active'}
-                          {backendStatus === 'waking' && 'Waking Up...'}
-                          {backendStatus === 'sleeping' && 'Backend Sleeping'}
-                          {backendStatus === 'unknown' && 'Checking...'}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                        {backendStatus === 'active' && 'Backend is ready to serve requests.'}
-                        {backendStatus === 'waking' && `Waking up backend... ${wakeDuration}s elapsed`}
-                        {backendStatus === 'sleeping' && 'Click "Wake Backend" to start the server (may take 30-60s).'}
-                        {backendStatus === 'unknown' && 'Checking backend status...'}
-                      </div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Backend Status</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Monitor and manage backend server availability.</div>
                     </div>
                     <button
                       onClick={wakeBackend}
                       disabled={backendWaking || backendStatus === 'active'}
                       style={{
-                        padding: "0.75rem 1.5rem",
+                        height: "42px",
+                        minWidth: "140px",
+                        padding: "0 1rem",
                         background: backendWaking ? "rgba(168, 85, 247, 0.5)" : backendStatus === 'active' ? "rgba(16, 185, 129, 0.2)" : "#a855f7",
-                        color: backendStatus === 'active' ? "#10b981" : "white",
-                        border: backendStatus === 'active' ? "1px solid rgba(16, 185, 129, 0.3)" : "none",
+                        color: backendStatus === 'active' ? "#34d399" : "white",
+                        border: backendStatus === 'active' ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
                         borderRadius: "var(--radius-md)",
                         cursor: backendWaking || backendStatus === 'active' ? "not-allowed" : "pointer",
                         fontWeight: 600,
+                        fontSize: "0.9rem",
                         transition: 'all 0.2s',
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '0.5rem'
                       }}
                     >
@@ -574,77 +635,6 @@ function AppContent() {
                           Waking...
                         </>
                       ) : backendStatus === 'active' ? 'Active' : 'Wake Backend'}
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section style={{ marginBottom: "2rem" }}>
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Data & Testing</h3>
-                <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
-
-                  {/* Sample Workspace Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Sample Workspace</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Replace all data with sample missions and tasks.</div>
-                    </div>
-                    <button
-                      onClick={() => setShowInjectConfirm(true)}
-                      disabled={isDemoLoading}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        background: isDemoLoading ? "rgba(168, 85, 247, 0.5)" : "#a855f7",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "var(--radius-md)",
-                        cursor: isDemoLoading ? "not-allowed" : "pointer",
-                        fontWeight: 600,
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      {isDemoLoading ? (
-                        <>
-                          <span className="loading-spinner" style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid rgba(255,255,255,0.3)',
-                            borderTop: '2px solid white',
-                            borderRadius: '50%',
-                            animation: 'spin 0.8s linear infinite'
-                          }}></span>
-                          Loading...
-                        </>
-                      ) : 'Inject Data'}
-                    </button>
-                  </div>
-
-                  {/* Clear All Data Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem', color: '#ef4444' }}>Clear All Data</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Delete all tasks and missions permanently.</div>
-                    </div>
-                    <button
-                      onClick={() => setShowClearConfirm(true)}
-                      disabled={isDemoLoading}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        background: "rgba(239, 68, 68, 0.1)",
-                        color: "#ef4444",
-                        border: "1px solid rgba(239, 68, 68, 0.2)",
-                        borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
-                    >
-                      Clear Data
                     </button>
                   </div>
                 </div>

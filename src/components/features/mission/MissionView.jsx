@@ -3,7 +3,7 @@ import { useMission } from '../../../context/MissionContext';
 import { useTasks } from '../../../context/TaskContext';
 import MissionWizard from './MissionWizard';
 import MissionHistoryModal from './MissionHistoryModal';
-import { Plus, Edit2, Trash2, Check, X, Compass, Target, Heart, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X, Compass, Target, Heart, Clock, AlertCircle, MoreVertical } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 const ToastContext = createContext();
@@ -125,11 +125,25 @@ function MissionViewContent({
                     </h3>
                     <button
                         className="btn btn-ghost"
-                        onClick={() => addMission('My New Mission is...')}
-                        style={{ background: 'rgba(255,255,255,0.1)', width: '28px', height: '28px', padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            addMission('New Mission');
+                        }}
+                        style={{
+                            background: 'rgba(255,255,255,0.2)',
+                            width: '32px',
+                            height: '32px',
+                            padding: 0,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            flexShrink: 0
+                        }}
                         title="Create New Mission"
                     >
-                        <Plus size={16} />
+                        <Plus size={20} color="white" strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -374,6 +388,10 @@ function MissionCard({ mission, isRoot }) {
     const [editText, setEditText] = useState(mission.text);
     const [isHovered, setIsHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const subMissions = getSubMissions(mission.id);
 
     const showToast = useToast();
@@ -411,30 +429,27 @@ function MissionCard({ mission, isRoot }) {
             <div
                 className="glass-panel"
                 style={{
-                    padding: '0.75rem',
+                    padding: '0.6rem',
                     borderRadius: 'var(--radius-md)',
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.25rem'
+                    gap: '0.2rem',
+                    position: 'relative', // For menu positioning
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s, background 0.2s'
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
+                onClick={() => setShowDetailModal(true)}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 600, fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0, marginRight: '0.5rem' }}>{mission.text}</div>
-                    <div style={{ display: 'flex', gap: '0.25rem', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
-                        <button className="btn btn-ghost" onClick={() => {
-                            const newText = prompt("Update Role name:", mission.text);
-                            if (newText) updateMission(mission.id, newText);
-                        }} size="sm"><Edit2 size={14} /></button>
-                        <button className="btn btn-ghost danger" onClick={() => deleteMission(mission.id)} size="sm"><Trash2 size={14} /></button>
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{mission.text}</div>
                 </div>
 
                 <div style={{ marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem', color: 'var(--color-text-muted)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.25rem', color: 'var(--color-text-muted)' }}>
                         <span>Progress</span>
                         <span>{completed}/{total}</span>
                     </div>
@@ -442,7 +457,280 @@ function MissionCard({ mission, isRoot }) {
                         <div style={{ width: `${pct}%`, height: '100%', background: 'var(--color-primary)', transition: 'width 0.5s' }} />
                     </div>
                 </div>
-            </div>
+
+
+
+                {/* Detail Modal */}
+                {
+                    showDetailModal && createPortal(
+                        <div style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999
+                        }} onClick={() => setShowDetailModal(false)}>
+                            <div onClick={e => e.stopPropagation()} style={{
+                                background: '#1e293b',
+                                padding: '2rem',
+                                borderRadius: '16px',
+                                maxWidth: '600px',
+                                width: '90%',
+                                maxHeight: '80vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            }}>
+                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>Submission Details</div>
+                                        <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'white', lineHeight: 1.3 }}>{mission.text}</h3>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => setShowEditModal(true)}
+                                            title="Edit Submission"
+                                            style={{ color: '#94a3b8' }}
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => setShowDeleteConfirm(true)}
+                                            title="Delete Submission"
+                                            style={{ color: '#ef4444' }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                        <span style={{ color: '#94a3b8' }}>Progress</span>
+                                        <span style={{ color: 'white', fontWeight: 600 }}>{Math.round(pct)}% ({completed}/{total} tasks)</span>
+                                    </div>
+                                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--color-primary)', transition: 'width 0.5s' }} />
+                                    </div>
+                                </div>
+
+                                <div style={{ flex: 1, overflowY: 'auto', minHeight: '100px' }}>
+                                    <h4 style={{ fontSize: '1rem', color: 'white', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        Linked Tasks <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.5rem', borderRadius: '10px' }}>{linkedTasks.length}</span>
+                                    </h4>
+
+                                    {linkedTasks.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontStyle: 'italic', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                                            No linked tasks yet.
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {linkedTasks.map(task => (
+                                                <div key={task.id} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    padding: '0.75rem',
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    borderRadius: '8px'
+                                                }}>
+                                                    <div style={{
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        borderRadius: '50%',
+                                                        border: `2px solid ${task.status === 'done' ? '#22c55e' : '#64748b'}`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {task.status === 'done' && <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }} />}
+                                                    </div>
+                                                    <span style={{
+                                                        color: task.status === 'done' ? '#94a3b8' : 'white',
+                                                        textDecoration: task.status === 'done' ? 'line-through' : 'none',
+                                                        flex: 1
+                                                    }}>
+                                                        {task.title}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setShowDetailModal(false)}
+                                        className="btn btn-primary"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )
+                }
+
+                {/* Edit Submission Modal - Duplicate for Child Card */}
+                {
+                    showEditModal && createPortal(
+                        <div style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999
+                        }} onClick={() => setShowEditModal(false)}>
+                            <div onClick={e => e.stopPropagation()} style={{
+                                background: '#1e293b',
+                                padding: '2rem',
+                                borderRadius: '16px',
+                                maxWidth: '500px',
+                                width: '90%',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            }}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>Edit Submission</h3>
+                                </div>
+
+                                <textarea
+                                    value={editText}
+                                    onChange={e => setEditText(e.target.value)}
+                                    autoFocus
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '80px',
+                                        padding: '1rem',
+                                        background: 'rgba(0,0,0,0.3)',
+                                        color: 'white',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 'var(--radius-md)',
+                                        fontSize: '1rem',
+                                        fontFamily: 'inherit',
+                                        marginBottom: '1.5rem',
+                                        resize: 'vertical'
+                                    }}
+                                />
+
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setShowEditModal(false)}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: 'transparent',
+                                            color: '#94a3b8',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            cursor: 'pointer',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleSave();
+                                            setShowEditModal(false);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: '#3b82f6',
+                                            color: 'white',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )
+                }
+
+                {/* Delete Confirmation Modal - Duplicate for Child Card */}
+                {
+                    showDeleteConfirm && createPortal(
+                        <div style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999
+                        }} onClick={() => setShowDeleteConfirm(false)}>
+                            <div onClick={e => e.stopPropagation()} style={{
+                                background: '#1e293b',
+                                padding: '2rem',
+                                borderRadius: '16px',
+                                maxWidth: '400px',
+                                width: '90%',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#ef4444' }}>Delete {isRoot ? 'Mission' : 'Submission'}?</h3>
+                                </div>
+                                <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                                    Are you sure you want to delete <strong style={{ color: '#fff' }}>"{mission.text}"</strong>?
+                                    {subMissions.length > 0 && <><br /><br /><strong style={{ color: '#ef4444' }}>Warning:</strong> This will also delete {subMissions.length} submission{subMissions.length > 1 ? 's' : ''}.</>}
+                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: 'transparent',
+                                            color: '#94a3b8',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            cursor: 'pointer',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            deleteMission(mission.id);
+                                            setShowDeleteConfirm(false);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Yes, Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )
+                }
+            </div >
         );
     }
 
@@ -451,14 +739,14 @@ function MissionCard({ mission, isRoot }) {
         <div
             className="glass-panel"
             style={{
-                padding: '1.5rem',
+                padding: '0.75rem 1rem 1rem 1rem',
                 borderRadius: 'var(--radius-lg)',
                 borderLeft: '4px solid var(--color-primary)',
                 background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))'
             }}
         >
             <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.5rem' }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
@@ -477,9 +765,9 @@ function MissionCard({ mission, isRoot }) {
                         </div>
                     ) : (
                         <div>
-                            <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Ultimate Objective</div>
+                            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-muted)', marginBottom: '0.1rem' }}>Ultimate Objective</div>
                             <div style={{
-                                fontSize: '1.75rem',
+                                fontSize: '1.4rem',
                                 lineHeight: 1.3,
                                 fontWeight: 700,
                                 letterSpacing: '-0.5px',
@@ -507,15 +795,15 @@ function MissionCard({ mission, isRoot }) {
 
             {/* Submissions Grid */}
             <div style={{
-                marginTop: '1rem',
-                paddingTop: '1rem',
+                marginTop: '0.1rem',
+                paddingTop: '0.25rem',
                 borderTop: '1px solid rgba(255,255,255,0.05)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.75rem'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <h4 style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Submissions</h4>
+                    <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Submissions</h4>
                     <button
                         className="btn btn-ghost"
                         onClick={() => setIsAddingChild(true)}
@@ -564,6 +852,88 @@ function MissionCard({ mission, isRoot }) {
                 )}
             </div>
 
+            {/* Edit Submission Modal */}
+            {showEditModal && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }} onClick={() => setShowEditModal(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: '#1e293b',
+                        padding: '2rem',
+                        borderRadius: '16px',
+                        maxWidth: '500px',
+                        width: '90%',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>Edit Submission</h3>
+                        </div>
+
+                        <textarea
+                            value={editText}
+                            onChange={e => setEditText(e.target.value)}
+                            autoFocus
+                            style={{
+                                width: '100%',
+                                minHeight: '80px',
+                                padding: '1rem',
+                                background: 'rgba(0,0,0,0.3)',
+                                color: 'white',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)',
+                                fontSize: '1rem',
+                                fontFamily: 'inherit',
+                                marginBottom: '1.5rem',
+                                resize: 'vertical'
+                            }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    background: 'transparent',
+                                    color: '#94a3b8',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleSave();
+                                    setShowEditModal(false);
+                                }}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    background: '#3b82f6',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && createPortal(
                 <div style={{
@@ -585,8 +955,7 @@ function MissionCard({ mission, isRoot }) {
                         border: '1px solid rgba(239, 68, 68, 0.2)',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                            <span style={{ fontSize: '1.5rem' }}>🗑️</span>
+                        <div style={{ marginBottom: '1rem' }}>
                             <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#ef4444' }}>Delete {isRoot ? 'Mission' : 'Submission'}?</h3>
                         </div>
                         <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
