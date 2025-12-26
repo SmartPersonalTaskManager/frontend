@@ -63,6 +63,7 @@ function AppContent() {
   };
 
 
+
   const { loadDemoData, isLoading: isDemoLoading } = useDemoLoader();
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
 
@@ -93,8 +94,10 @@ function AppContent() {
     }
   };
 
-
-  // ...
+  // IMPORTANT: Check authentication BEFORE rendering main app
+  if (!isAuthenticated) {
+    return <WelcomePage />;
+  }
 
   return (
     <div className="app-shell" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>

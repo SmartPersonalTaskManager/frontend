@@ -48,22 +48,23 @@ export function GoogleCalendarProvider({ children }) {
     };
   }, []);
 
-  // Restore user data from localStorage on mount
+  // Restore user data from localStorage on mount (CRITICAL for session persistence)
   useEffect(() => {
+    const storedUserData = localStorage.getItem("sptm_user_data");
     const userId = localStorage.getItem("sptm_userId");
-    const accessToken = localStorage.getItem("googleAccessToken");
 
-    if (userId && accessToken) {
-      // Try to restore user session
-      const storedUserData = localStorage.getItem("sptm_user_data");
-      if (storedUserData) {
-        try {
-          const userData = JSON.parse(storedUserData);
-          setGoogleUser(userData);
-          setIsAuthenticated(true);
-        } catch (e) {
-          console.error("Failed to restore user data:", e);
-        }
+    // If we have stored user data, restore the session
+    if (storedUserData && userId) {
+      try {
+        const userData = JSON.parse(storedUserData);
+        console.log("Restoring user session:", userData);
+        setGoogleUser(userData);
+        setIsAuthenticated(true);
+      } catch (e) {
+        console.error("Failed to restore user data:", e);
+        // Clear invalid data
+        localStorage.removeItem("sptm_user_data");
+        localStorage.removeItem("sptm_userId");
       }
     }
   }, []);
