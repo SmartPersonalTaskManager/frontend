@@ -403,11 +403,11 @@ function MissionCard({ mission, isRoot }) {
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
-                    <button className="btn btn-ghost" onClick={() => setShowHistory(true)} title="View History">
-                        <Clock size={18} className="text-primary" />
-                    </button>
                     <button className="btn btn-ghost" onClick={() => setIsEditing(true)} title="Edit Mission">
                         <Edit2 size={18} />
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => deleteMission(mission.id)} title="Delete Mission" style={{ color: '#ef4444' }}>
+                        <Trash2 size={18} />
                     </button>
                 </div>
             </div>
