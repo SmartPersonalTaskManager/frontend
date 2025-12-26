@@ -98,7 +98,7 @@ function MissionViewContent({
     addMission, addValue, updateValue, deleteValue, addVision, updateVision, deleteVision
 }) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1200px', margin: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1200px', margin: '0' }}>
 
             {/* 1. HERO: Personal Mission Statement */}
             {/* 1. HERO: Mission Statement Content */}
@@ -112,29 +112,29 @@ function MissionViewContent({
             }}>
                 {/* Mission Container Header */}
                 <div style={{
-                    padding: '1.25rem',
-                    background: 'rgba(59, 130, 246, 0.1)', // Blue tint for Mission
+                    padding: '1rem',
+                    background: 'rgba(129, 140, 248, 0.2)', // Increased opacity for better visibility
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem', margin: 0 }}>
-                        <Target size={22} style={{ color: '#3b82f6' }} />
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', margin: 0 }}>
+                        <Target size={20} style={{ color: '#818cf8' }} />
                         <span>Personal Mission</span>
                     </h3>
                     <button
                         className="btn btn-ghost"
                         onClick={() => addMission('My New Mission is...')}
-                        style={{ background: 'rgba(255,255,255,0.1)', width: '32px', height: '32px', padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ background: 'rgba(255,255,255,0.1)', width: '28px', height: '28px', padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         title="Create New Mission"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                     </button>
                 </div>
 
                 {/* Mission Content */}
-                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {rootMissions.length === 0 ? (
                         <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
                             <Target size={48} style={{ opacity: 0.2, marginBottom: '1rem', marginInline: 'auto' }} />
@@ -152,24 +152,18 @@ function MissionViewContent({
 
             {/* 2. COMPASS: Values & Vision */}
             <section>
-                <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Compass size={22} className="text-primary" />
-                    <span>Inner Compass</span>
-                </h3>
-                <div style={{ maxWidth: '600px' }}>
-                    {/* Core Values */}
-                    <ListSection
-                        title="Core Values"
-                        icon={<Heart size={18} style={{ color: '#ef4444' }} />}
-                        items={safeValues}
-                        onAdd={addValue}
-                        onUpdate={updateValue}
-                        onDelete={deleteValue}
-                        placeholder="Add a core value..."
-                        emptyMessage="What principles guide you?"
-                        accentColor="rgba(239, 68, 68, 0.1)"
-                    />
-                </div>
+                {/* Core Values */}
+                <ListSection
+                    title="Core Values"
+                    icon={<Heart size={20} style={{ color: '#ef4444' }} />}
+                    items={safeValues}
+                    onAdd={addValue}
+                    onUpdate={updateValue}
+                    onDelete={deleteValue}
+                    placeholder="Add a core value..."
+                    emptyMessage="What principles guide you?"
+                    accentColor="rgba(239, 68, 68, 0.1)"
+                />
             </section>
 
 
@@ -205,7 +199,7 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
             overflow: 'hidden'
         }}>
             <div style={{
-                padding: '1.25rem',
+                padding: '1rem',
                 background: accentColor,
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 display: 'flex',
@@ -218,14 +212,14 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
                 <button
                     className="btn btn-ghost"
                     onClick={() => setIsAdding(true)}
-                    style={{ background: 'rgba(255,255,255,0.1)', width: '32px', height: '32px', padding: 0, borderRadius: '50%' }}
+                    style={{ background: 'rgba(255,255,255,0.1)', width: '28px', height: '28px', padding: 0, borderRadius: '50%' }}
                     title="Add Item"
                 >
                     <Plus size={16} />
                 </button>
             </div>
 
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {items.length === 0 && !isAdding && (
                     <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>
                         {emptyMessage}
@@ -457,15 +451,14 @@ function MissionCard({ mission, isRoot }) {
         <div
             className="glass-panel"
             style={{
-                padding: '2rem',
+                padding: '1.5rem',
                 borderRadius: 'var(--radius-lg)',
-                marginBottom: '1rem',
                 borderLeft: '4px solid var(--color-primary)',
                 background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))'
             }}
         >
             <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '2rem' }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
@@ -514,12 +507,12 @@ function MissionCard({ mission, isRoot }) {
 
             {/* Submissions Grid */}
             <div style={{
-                marginTop: '1.5rem',
-                paddingTop: '1.5rem',
+                marginTop: '1rem',
+                paddingTop: '1rem',
                 borderTop: '1px solid rgba(255,255,255,0.05)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1rem'
+                gap: '0.75rem'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <h4 style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>Submissions</h4>
@@ -558,7 +551,7 @@ function MissionCard({ mission, isRoot }) {
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
                     {subMissions.map(sub => (
                         <MissionCard key={sub.id} mission={sub} isRoot={false} />
                     ))}

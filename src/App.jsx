@@ -88,6 +88,11 @@ function AppContent() {
   const [activeDragId, setActiveDragId] = useState(null);
   const { isAuthenticated, logout, googleUser } = useGoogleCalendar();
 
+  // Backend Status Management
+  const [backendStatus, setBackendStatus] = useState('unknown'); // 'active', 'sleeping', 'waking', 'unknown'
+  const [backendWaking, setBackendWaking] = useState(false);
+  const [wakeDuration, setWakeDuration] = useState(0);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -123,6 +128,55 @@ function AppContent() {
       });
     }
   };
+
+  // Backend Status Functions
+  const checkBackendStatus = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setBackendStatus(response.ok ? 'active' : 'sleeping');
+      return response.ok;
+    } catch (error) {
+      setBackendStatus('sleeping');
+      return false;
+    }
+  };
+
+  const wakeBackend = async () => {
+    setBackendWaking(true);
+    setBackendStatus('waking');
+    setWakeDuration(0);
+
+    const startTime = Date.now();
+    const durationInterval = setInterval(() => {
+      setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    try {
+      // Try pinging the backend (login endpoint is public)
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      clearInterval(durationInterval);
+      setBackendStatus(response.ok ? 'active' : 'sleeping');
+      setBackendWaking(false);
+      setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
+    } catch (error) {
+      clearInterval(durationInterval);
+      setBackendStatus('sleeping');
+      setBackendWaking(false);
+      console.error('Backend wake failed:', error);
+    }
+  };
+
+  // Check backend status on mount
+  useEffect(() => {
+    checkBackendStatus();
+  }, []);
 
 
 
@@ -290,7 +344,7 @@ function AppContent() {
                   : activeTab === "review"
                     ? "Weekly Review"
                     : activeTab === "mission"
-                      ? "Mission"
+                      ? "Compass"
                       : activeTab === "stats"
                         ? "Insights"
                         : activeTab}
@@ -454,6 +508,71 @@ function AppContent() {
                   >
                     Sign Out
                   </button>
+                </div>
+              </section>
+
+              {/* Backend Status Section */}
+              <section style={{ marginBottom: "2rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Backend Status</h3>
+                <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <div style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '50%',
+                          background: backendStatus === 'active' ? '#10b981' : backendStatus === 'waking' ? '#f59e0b' : '#ef4444',
+                          boxShadow: backendStatus === 'active' ? '0 0 8px #10b981' : backendStatus === 'waking' ? '0 0 8px #f59e0b' : 'none',
+                          animation: backendStatus === 'waking' ? 'pulse 1.5s infinite' : 'none'
+                        }}></div>
+                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>
+                          {backendStatus === 'active' && '🟢 Backend Active'}
+                          {backendStatus === 'waking' && '🟡 Waking Up...'}
+                          {backendStatus === 'sleeping' && '🔴 Backend Sleeping'}
+                          {backendStatus === 'unknown' && '🔵 Checking...'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                        {backendStatus === 'active' && 'Backend is ready to serve requests.'}
+                        {backendStatus === 'waking' && `Waking up backend... ${wakeDuration}s elapsed`}
+                        {backendStatus === 'sleeping' && 'Click "Wake Backend" to start the server (may take 30-60s).'}
+                        {backendStatus === 'unknown' && 'Checking backend status...'}
+                      </div>
+                    </div>
+                    <button
+                      onClick={wakeBackend}
+                      disabled={backendWaking || backendStatus === 'active'}
+                      style={{
+                        padding: "0.75rem 1.5rem",
+                        background: backendWaking ? "rgba(168, 85, 247, 0.5)" : backendStatus === 'active' ? "rgba(16, 185, 129, 0.2)" : "#a855f7",
+                        color: backendStatus === 'active' ? "#10b981" : "white",
+                        border: backendStatus === 'active' ? "1px solid rgba(16, 185, 129, 0.3)" : "none",
+                        borderRadius: "var(--radius-md)",
+                        cursor: backendWaking || backendStatus === 'active' ? "not-allowed" : "pointer",
+                        fontWeight: 600,
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      {backendWaking ? (
+                        <>
+                          <span className="loading-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite'
+                          }}></span>
+                          Waking...
+                        </>
+                      ) : backendStatus === 'active' ? '✓ Active' : 'Wake Backend'}
+                    </button>
+                  </div>
                 </div>
               </section>
 

@@ -9,6 +9,7 @@ import {
     ChevronLeft,
     ChevronRight,
     User,
+    Compass,
 } from "lucide-react";
 import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
 
@@ -118,8 +119,8 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                 <NavButton
                     active={activeTab === "mission"}
                     onClick={() => setActiveTab("mission")}
-                    icon={<Target size={20} />}
-                    label="Mission"
+                    icon={<Compass size={20} />}
+                    label="Compass"
                     collapsed={isCollapsed}
                 />
                 <NavButton
