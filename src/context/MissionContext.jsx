@@ -195,12 +195,19 @@ export function MissionProvider({ children }) {
     // --- Values ---
     const addValue = async (text) => {
         const userId = localStorage.getItem("sptm_userId");
-        if (!userId) return;
+        if (!userId) {
+            console.warn("addValue: No userId found");
+            return null;
+        }
         try {
+            console.log(`Adding value: "${text}" for user ${userId}`);
             const newValue = await api.post(`/core-values?userId=${userId}`, { text });
+            console.log("Value added:", newValue);
             setValues(prev => [...prev, newValue]);
+            return newValue;
         } catch (error) {
             console.error("Failed to add value:", error);
+            return null;
         }
     };
     const updateValue = async (id, text) => {

@@ -1,5 +1,26 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
+// Timeout wrapper for fetch
+const fetchWithTimeout = async (url, options, timeout = 30000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout - backend may be waking up. Please try again.');
+        }
+        throw error;
+    }
+};
+
 const getHeaders = () => {
     const headers = {
         "Content-Type": "application/json",
@@ -68,7 +89,7 @@ export const api = {
             return [];
         }
 
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
             method: "GET",
             headers: getHeaders(),
         });
@@ -106,7 +127,7 @@ export const api = {
             return newItem;
         }
 
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
             method: "POST",
             headers: getHeaders(),
             body: JSON.stringify(body),
@@ -139,7 +160,7 @@ export const api = {
             return body;
         }
 
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
             method: "PUT",
             headers: getHeaders(),
             body: JSON.stringify(body),
@@ -165,7 +186,7 @@ export const api = {
             return true;
         }
 
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, {
             method: "DELETE",
             headers: getHeaders(),
         });
