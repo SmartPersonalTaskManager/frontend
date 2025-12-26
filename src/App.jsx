@@ -531,10 +531,10 @@ function AppContent() {
                           animation: backendStatus === 'waking' ? 'pulse 1.5s infinite' : 'none'
                         }}></div>
                         <div style={{ fontSize: '1rem', fontWeight: 600 }}>
-                          {backendStatus === 'active' && '🟢 Backend Active'}
-                          {backendStatus === 'waking' && '🟡 Waking Up...'}
-                          {backendStatus === 'sleeping' && '🔴 Backend Sleeping'}
-                          {backendStatus === 'unknown' && '🔵 Checking...'}
+                          {backendStatus === 'active' && 'Backend Active'}
+                          {backendStatus === 'waking' && 'Waking Up...'}
+                          {backendStatus === 'sleeping' && 'Backend Sleeping'}
+                          {backendStatus === 'unknown' && 'Checking...'}
                         </div>
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
@@ -573,7 +573,7 @@ function AppContent() {
                           }}></span>
                           Waking...
                         </>
-                      ) : backendStatus === 'active' ? '✓ Active' : 'Wake Backend'}
+                      ) : backendStatus === 'active' ? 'Active' : 'Wake Backend'}
                     </button>
                   </div>
                 </div>
