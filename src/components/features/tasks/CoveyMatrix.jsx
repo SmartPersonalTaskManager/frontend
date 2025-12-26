@@ -756,7 +756,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                                 ) : (
                                     form.context
                                 )}
-                                <ChevronDown size={18} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', transform: showContextSelector ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s' }} />
+                                <ChevronDown size={18} style={{ position: 'absolute', right: '10px', top: '50%', pointerEvents: 'none', transform: showContextSelector ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s' }} />
                             </button>
 
                             {/* Dropdown Menu */}

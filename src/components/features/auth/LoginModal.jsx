@@ -3,6 +3,7 @@ import { X, Mail, Lock, User, ArrowRight } from "lucide-react";
 
 import { useGoogleCalendar } from "../../../hooks/useGoogleCalendar";
 import BASE_URL from "../../../services/api";
+import Toast from "../../ui/Toast";
 
 export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
     const [isSignUp, setIsSignUp] = useState(initialView === "signup");
@@ -12,6 +13,7 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
         password: "",
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [toast, setToast] = useState(null);
 
     const { loginUser, handleLoginFailure } = useGoogleCalendar();
 
@@ -19,14 +21,14 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
     useEffect(() => {
         if (isOpen) {
             setIsSignUp(initialView === "signup");
+            setToast(null); // Clear toast on open
         }
     }, [isOpen, initialView]);
-
-    // Google Login Hook Removed per request
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setToast(null);
 
         try {
             if (!isSignUp) {
@@ -46,7 +48,6 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
                 }
 
                 const data = await response.json();
-                // data = { accessToken, id, username, email }
 
                 const user = {
                     id: data.id,
@@ -75,12 +76,13 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
                     throw new Error(errorMsg || "Registration failed");
                 }
 
-                alert("Registration successful! Please login.");
+                setToast({ message: "Registration successful! Please login.", type: "success" });
+                localStorage.setItem("sptm_is_fresh_user", "true"); // Semantic Flag for App.jsx
                 setIsSignUp(false);
             }
         } catch (error) {
             console.error(error);
-            alert(error.message);
+            setToast({ message: error.message, type: "error" });
         } finally {
             setIsLoading(false);
         }
@@ -108,6 +110,14 @@ export default function LoginModal({ isOpen, onClose, initialView = "login" }) {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
             <div
                 className="glass-panel"
                 style={{

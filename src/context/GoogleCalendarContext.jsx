@@ -48,6 +48,26 @@ export function GoogleCalendarProvider({ children }) {
     };
   }, []);
 
+  // Restore user data from localStorage on mount
+  useEffect(() => {
+    const userId = localStorage.getItem("sptm_userId");
+    const accessToken = localStorage.getItem("googleAccessToken");
+
+    if (userId && accessToken) {
+      // Try to restore user session
+      const storedUserData = localStorage.getItem("sptm_user_data");
+      if (storedUserData) {
+        try {
+          const userData = JSON.parse(storedUserData);
+          setGoogleUser(userData);
+          setIsAuthenticated(true);
+        } catch (e) {
+          console.error("Failed to restore user data:", e);
+        }
+      }
+    }
+  }, []);
+
   // Handle successful login (Legacy/Standard GoogleLogin Component)
   const handleLoginSuccess = useCallback((credentialResponse) => {
     try {
@@ -134,6 +154,9 @@ export function GoogleCalendarProvider({ children }) {
     setGoogleUser(user);
     setIsAuthenticated(true);
     setError(null);
+
+    // Persist user data for session restoration
+    localStorage.setItem("sptm_user_data", JSON.stringify(user));
 
     // Normalize token from user object
     const token = user.accessToken || user.credential;
@@ -346,7 +369,10 @@ export function GoogleCalendarProvider({ children }) {
     setGoogleUser(null);
     setCalendarEvents([]);
     localStorage.removeItem("googleCalendarToken");
+    localStorage.removeItem("googleAccessToken"); // Fix: Clear this too
     localStorage.removeItem("sptm_userId");
+    localStorage.removeItem("sptm_user_data"); // Clear persisted user data
+    localStorage.removeItem("sptm_demo_prompt_shown"); // Optional: Reset prompts
   }, []);
 
   const value = {

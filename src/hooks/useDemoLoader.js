@@ -12,72 +12,69 @@ export function useDemoLoader() {
         console.log('🚀 Starting demo data load...');
         setIsLoading(true);
         try {
-            // 1. Add Visions
-            console.log('📌 Loading visions...');
-            for (const v of DEMO_DATA.visions) {
-                console.log('  Adding vision:', v.text);
-                await addVision(v.text);
-            }
-            console.log('✅ Visions loaded');
-
-            // 2. Add Values
+            // 1. Add Values (Independent)
             console.log('📌 Loading values...');
-            for (const v of DEMO_DATA.values) {
-                console.log('  Adding value:', v.text);
-                await addValue(v.text);
+            if (DEMO_DATA.values) {
+                for (const v of DEMO_DATA.values) {
+                    await addValue(v.text);
+                }
             }
             console.log('✅ Values loaded');
 
-            // 3. Add Missions & Submissions (and keep track of IDs)
-            const missionMap = new Map(); // Title -> ID
+            // 2. Add Missions, Submissions & Linked Tasks
+            console.log('📌 Loading missions tree...');
+            if (DEMO_DATA.missions) {
+                for (const m of DEMO_DATA.missions) {
+                    console.log('  Adding root mission:', m.text);
+                    const rootMission = await addMission(m.text);
 
-            console.log('📌 Loading missions...');
-            for (const m of DEMO_DATA.missions) {
-                console.log('  Adding root mission:', m.text);
-                const rootMission = await addMission(m.text);
-                console.log('  Root mission created with ID:', rootMission?.id);
-                if (rootMission) {
-                    missionMap.set(m.text, rootMission.id);
-
-                    if (m.submissions) {
-                        console.log('  Adding submissions for:', m.text);
+                    if (rootMission && m.submissions) {
                         for (const sub of m.submissions) {
                             console.log('    Adding submission:', sub.title);
                             const subMission = await addMission(sub.title, rootMission.id);
-                            console.log('    Submission created with ID:', subMission?.id);
-                            if (subMission) {
-                                missionMap.set(sub.title, subMission.id);
+
+                            if (subMission && sub.tasks) {
+                                console.log(`      Adding ${sub.tasks.length} tasks for submission:`, sub.title);
+                                for (const t of sub.tasks) {
+                                    await addTask({
+                                        title: t.title,
+                                        urge: t.urge,
+                                        imp: t.imp,
+                                        context: t.context,
+                                        missionId: subMission.id,
+                                        dueDate: new Date(new Date().setDate(new Date().getDate() + (t.dueDate || 0))).toISOString().split('T')[0],
+                                        description: t.checklist ? JSON.stringify(t.checklist) : "", // Store checklist in description for now or extended field if supported
+                                        checklist: t.checklist,
+                                        isInbox: false
+                                    });
+                                }
                             }
                         }
                     }
                 }
             }
-            console.log('✅ Missions loaded');
+            console.log('✅ Missions & Linked Tasks loaded');
 
-            // 4. Add Tasks
-            console.log('📌 Loading tasks...');
-            for (const t of DEMO_DATA.tasks) {
-                let missionId = null;
-                if (t.missionReference && missionMap.has(t.missionReference)) {
-                    missionId = missionMap.get(t.missionReference);
-                    console.log(`  Task "${t.title}" linked to mission ID:`, missionId);
+            // 3. Add Loose Tasks
+            console.log('📌 Loading loose tasks...');
+            if (DEMO_DATA.tasks) {
+                for (const t of DEMO_DATA.tasks) {
+                    await addTask({
+                        title: t.title,
+                        urge: t.urge,
+                        imp: t.imp,
+                        context: t.context,
+                        missionId: null,
+                        dueDate: new Date(new Date().setDate(new Date().getDate() + (t.dueDate || 0))).toISOString().split('T')[0],
+                        checklist: t.checklist,
+                        description: t.checklist ? "Has Checklist" : "",
+                        isInbox: false
+                    });
                 }
-
-                console.log('  Adding task:', t.title);
-                await addTask({
-                    title: t.title,
-                    urge: t.urge,
-                    imp: t.imp,
-                    context: t.context,
-                    missionId: missionId,
-                    dueDate: t.dueDate,
-                    description: "Demo task generated for testing purposes.",
-                    isInbox: false
-                });
             }
-            console.log('✅ Tasks loaded');
+            console.log('✅ Loose Tasks loaded');
 
-            // Mark as done in local storage to avoid re-prompting if we were auto-loading
+            // Mark as done
             localStorage.setItem("sptm_has_loaded_demo", "true");
             console.log('✅ Demo data load complete!');
 

@@ -33,6 +33,29 @@ export function TaskProvider({ children }) {
         return 'NOT_STARTED';
     };
 
+    // Helper to separate Description and Checklist
+    const parseTaskDescription = (rawDescription) => {
+        if (!rawDescription) return { description: "", checklist: [] };
+        if (rawDescription.includes('|||CHECKLIST|||')) {
+            const parts = rawDescription.split('|||CHECKLIST|||');
+            try {
+                return {
+                    description: parts[0],
+                    checklist: JSON.parse(parts[1])
+                };
+            } catch (e) {
+                return { description: parts[0], checklist: [] };
+            }
+        }
+        return { description: rawDescription, checklist: [] };
+    };
+
+    const serializeTaskDescription = (description, checklist) => {
+        const cleanDesc = description || "";
+        const cleanChecklist = checklist && Array.isArray(checklist) ? JSON.stringify(checklist) : "[]";
+        return `${cleanDesc}|||CHECKLIST|||${cleanChecklist}`;
+    };
+
     // Fetch Tasks and Contexts on Load and when Authentication changes
     useEffect(() => {
         const fetchData = async () => {
@@ -47,17 +70,22 @@ export function TaskProvider({ children }) {
                 setLoading(true);
                 // Fetch Tasks
                 const tasksData = await api.get(`/tasks/user/${userId}`);
-                const adaptedTasks = tasksData.map(t => ({
-                    ...t,
-                    status: mapBackendStatusToFrontend(t.status),
-                    urge: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'URGENT_NOT_IMPORTANT'),
-                    imp: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'NOT_URGENT_IMPORTANT'),
-                    missionId: t.subMissionId || null,
-                    context: t.context || '@home',
-                    isInbox: t.isInbox,
-                    isArchived: t.isArchived,
-                    completedAt: t.completedAt
-                }));
+                const adaptedTasks = tasksData.map(t => {
+                    const { description, checklist } = parseTaskDescription(t.description);
+                    return {
+                        ...t,
+                        status: mapBackendStatusToFrontend(t.status),
+                        urge: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'URGENT_NOT_IMPORTANT'),
+                        imp: (t.priority === 'URGENT_IMPORTANT' || t.priority === 'NOT_URGENT_IMPORTANT'),
+                        missionId: t.subMissionId || null,
+                        context: t.context || '@home',
+                        isInbox: t.isInbox,
+                        isArchived: t.isArchived,
+                        completedAt: t.completedAt,
+                        description: description,
+                        checklist: checklist
+                    };
+                });
                 setTasks(adaptedTasks);
 
                 // Fetch Contexts
@@ -65,13 +93,6 @@ export function TaskProvider({ children }) {
                 if (contextsData && contextsData.length > 0) {
                     setContexts(contextsData);
                 } else {
-                    // EmptyDB -> Auto-seed defaults for better UX
-                    console.log("No contexts found, seeding defaults...");
-                    // We can re-use restoreContexts logic but we need access to it or duplicated logic.
-                    // Since restoreContexts is defined below, we can't call it easily inside useEffect unless we move it or use a separate function.
-                    // Let's just do it inline or define a helper outside.
-                    // Actually, let's just use the restore logic here.
-
                     const newContexts = [];
                     for (const ctx of DEFAULT_CONTEXTS) {
                         try {
@@ -105,6 +126,8 @@ export function TaskProvider({ children }) {
             formattedDate = `${formattedDate}T00:00:00`;
         }
 
+        const serializedDescription = serializeTaskDescription(taskData.description, taskData.checklist);
+
         const newTaskPayload = {
             ...taskData,
             userId: parseInt(userId),
@@ -115,7 +138,7 @@ export function TaskProvider({ children }) {
             urgent: taskData.urge,
             important: taskData.imp,
             subMissionId: taskData.missionId,
-            description: taskData.description || "",
+            description: serializedDescription,
             dueDate: formattedDate,
             context: taskData.context || '@home',
             isInbox: taskData.isInbox || false,
@@ -124,6 +147,7 @@ export function TaskProvider({ children }) {
 
         try {
             const createdTask = await api.post('/tasks', newTaskPayload);
+            const { description, checklist } = parseTaskDescription(createdTask.description);
             const adaptedTask = {
                 ...createdTask,
                 status: mapBackendStatusToFrontend(createdTask.status),
@@ -133,7 +157,9 @@ export function TaskProvider({ children }) {
                 context: createdTask.context,
                 isInbox: createdTask.isInbox,
                 isArchived: createdTask.isArchived,
-                completedAt: createdTask.completedAt
+                completedAt: createdTask.completedAt,
+                description: description,
+                checklist: checklist
             };
             setTasks(prev => [...prev, adaptedTask]);
             return adaptedTask;
@@ -156,6 +182,8 @@ export function TaskProvider({ children }) {
                 formattedDate = `${formattedDate}T00:00:00`;
             }
 
+            const serializedDescription = serializeTaskDescription(merged.description, merged.checklist);
+
             const payload = {
                 ...merged,
                 status: mapFrontendStatusToBackend(merged.status),
@@ -164,7 +192,8 @@ export function TaskProvider({ children }) {
                 context: merged.context,
                 isInbox: merged.isInbox,
                 isArchived: merged.isArchived,
-                completedAt: merged.completedAt
+                completedAt: merged.completedAt,
+                description: serializedDescription
             };
 
             await api.put(`/tasks/${id}`, payload);

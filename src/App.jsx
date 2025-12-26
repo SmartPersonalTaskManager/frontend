@@ -66,122 +66,143 @@ function AppContent() {
   const { loadDemoData, isLoading: isDemoLoading } = useDemoLoader();
   const [showDemoPrompt, setShowDemoPrompt] = useState(false);
 
-  // Check for first-time login prompt
+  // Check for first-time login (Fresh User)
   useEffect(() => {
-    const hasSeenPrompt = localStorage.getItem("sptm_demo_prompt_shown");
-    const userId = localStorage.getItem("sptm_userId");
-    // Only show if user is logged in and hasn't seen prompt
-    if (isAuthenticated && userId && !hasSeenPrompt) {
-      // Small delay to let UI settle
+    const isFreshUser = localStorage.getItem("sptm_is_fresh_user");
+
+    if (isAuthenticated && isFreshUser === "true") {
+      // Redirect to Settings
+      setActiveTab("settings");
+      // Show Prompt
       const timer = setTimeout(() => {
         setShowDemoPrompt(true);
-      }, 1000);
+        localStorage.removeItem("sptm_is_fresh_user"); // Consumed
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
   const handleInitialDemoLoad = async (shouldLoad) => {
     localStorage.setItem("sptm_demo_prompt_shown", "true");
-    setShowDemoPrompt(false);
     if (shouldLoad) {
+      // Keep modal open but change state to loading
       await loadDemoData();
+      setShowDemoPrompt(false); // Close after done
+    } else {
+      setShowDemoPrompt(false);
     }
   };
 
 
-  if (!isAuthenticated) {
-    return <WelcomePage />;
-  }
-
-
+  // ...
 
   return (
-    <div
-      className="app-shell"
-      style={{ display: "flex", height: "100vh", overflow: "hidden" }}
-    >
+    <div className="app-shell" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+      {/* ... Sidebar ... */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "1.5rem 2rem 0.75rem 2rem",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "fixed",
-            top: "-20%",
-            right: "-10%",
-            width: "600px",
-            height: "600px",
-            background:
-              "radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(15,23,42,0) 70%)",
-            borderRadius: "50%",
-            pointerEvents: "none",
-            zIndex: -1,
-          }}
-        />
+      <main style={{ flex: 1, overflowY: "auto", padding: "1.5rem 2rem 0.75rem 2rem", position: "relative" }}>
+        {/* Background... */}
+        <div style={{ position: "fixed", top: "-20%", right: "-10%", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(15,23,42,0) 70%)", borderRadius: "50%", pointerEvents: "none", zIndex: -1 }} />
 
-        {/* --- Demo Data Prompt Modal --- */}
+        {/* --- Demo Data Prompt / Loading Overlay --- */}
         {showDemoPrompt && (
           <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(5, 5, 10, 0.8)',
+            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 100
+            zIndex: 9999
           }}>
-            <div className="glass-panel" style={{
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '90%',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid rgba(168, 85, 247, 0.3)',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-            }}>
-              <h3 className="text-gradient-primary" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Welcome to SPTM! 🚀</h3>
-              <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                To help you get started and understand how the system works, would you like to load some <strong>Demo Data</strong>?
-                <br /><br />
-                This will populate your dashboard with example missions, visions, and tasks. You can always delete them later or add more from the Settings menu.
-              </p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => handleInitialDemoLoad(false)}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--color-text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  No, start fresh
-                </button>
-                <button
-                  onClick={() => handleInitialDemoLoad(true)}
-                  disabled={isDemoLoading}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'white',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    opacity: isDemoLoading ? 0.7 : 1
-                  }}
-                >
-                  {isDemoLoading ? 'Loading...' : 'Yes, Load Demo Data'}
-                </button>
+            {isDemoLoading ? (
+              // Minimal Aesthetic Loading State
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                <div className="pulsing-orb" style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle at 30% 30%, rgba(168, 85, 247, 0.8), rgba(99, 102, 241, 0.4))',
+                  boxShadow: '0 0 40px rgba(168, 85, 247, 0.4)',
+                  animation: 'pulse 1.5s ease-in-out infinite alternate'
+                }} />
+                <div style={{ textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, color: '#fff', marginBottom: '0.5rem' }}>Setting up your workspace...</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>Planting seeds for your missions</p>
+                </div>
+                <style>{`
+                    @keyframes pulse {
+                        0% { transform: scale(0.95); opacity: 0.8; }
+                        100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 60px rgba(168, 85, 247, 0.6); }
+                    }
+                  `}</style>
               </div>
-            </div>
+            ) : (
+              // The Question
+              <div className="glass-panel" style={{
+                padding: '2.5rem',
+                maxWidth: '480px',
+                width: '90%',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95))',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+              }}>
+                <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ padding: '0.75rem', background: 'rgba(168, 85, 247, 0.1)', borderRadius: '14px', color: '#a855f7' }}>
+                    <span style={{ fontSize: '1.5rem' }}>🌱</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 600, background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Quick Start?</h3>
+                </div>
+
+                <p style={{ color: '#94a3b8', marginBottom: '2rem', lineHeight: '1.6', fontSize: '1.05rem' }}>
+                  Would you like to populate your workspace with a <strong>Sample Workspace</strong>?
+                  <br /><br />
+                  It includes example missions and tasks to show you the power of the system.
+                </p>
+
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => handleInitialDemoLoad(false)}
+                    style={{
+                      padding: '0.85rem 1.5rem',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#64748b',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      transition: 'color 0.2s',
+                      fontSize: '0.95rem'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#fff'}
+                    onMouseLeave={(e) => e.target.style.color = '#64748b'}
+                  >
+                    Empty Workspace
+                  </button>
+                  <button
+                    onClick={() => handleInitialDemoLoad(true)}
+                    style={{
+                      padding: '0.85rem 1.75rem',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
+                      transition: 'transform 0.2s',
+                      fontSize: '0.95rem'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-1px)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                  >
+                    Inject Data
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -374,7 +395,7 @@ function AppContent() {
                 <div style={{ padding: "1.5rem", background: "rgba(255,255,255,0.03)", borderRadius: "var(--radius-lg)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Load Demo Data</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Sample Workspace</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Populate the application with sample missions and tasks.</div>
                     </div>
                     <button
