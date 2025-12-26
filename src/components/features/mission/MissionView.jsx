@@ -102,64 +102,78 @@ function MissionViewContent({
 
             {/* 1. HERO: Personal Mission Statement */}
             {/* 1. HERO: Mission Statement Content */}
-            <section>
-                <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <Target size={22} className="text-primary" />
-                            <span>Missions</span>
-                        </div>
-                        <button
-                            className="btn btn-ghost"
-                            onClick={() => addMission('My New Mission is...')}
-                            style={{
-                                width: '32px',
-                                height: '32px',
-                                padding: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '50%',
-                                background: 'rgba(255,255,255,0.05)'
-                            }}
-                            title="Add Mission"
-                        >
-                            <Plus size={18} />
-                        </button>
+            {/* 1. HERO: Personal Mission Statement */}
+            <section className="glass-panel" style={{
+                padding: '0',
+                borderRadius: 'var(--radius-lg)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                {/* Mission Container Header */}
+                <div style={{
+                    padding: '1.25rem',
+                    background: 'rgba(59, 130, 246, 0.1)', // Blue tint for Mission
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem', margin: 0 }}>
+                        <Target size={22} style={{ color: '#3b82f6' }} />
+                        <span>Personal Mission</span>
                     </h3>
+                    <button
+                        className="btn btn-ghost"
+                        onClick={() => addMission('My New Mission is...')}
+                        style={{ background: 'rgba(255,255,255,0.1)', width: '32px', height: '32px', padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Create New Mission"
+                    >
+                        <Plus size={18} />
+                    </button>
+                </div>
 
+                {/* Mission Content */}
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     {rootMissions.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--color-text-muted)' }}>
-                            No missions defined yet. Click + to add.
+                        <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
+                            <Target size={48} style={{ opacity: 0.2, marginBottom: '1rem', marginInline: 'auto' }} />
+                            <h3 style={{ marginBottom: '1rem' }}>Define Your Mission</h3>
+                            <p style={{ marginBottom: '1.5rem', color: 'var(--color-text-muted)' }}>What is your ultimate objective?</p>
+                            <button className="btn btn-primary" onClick={() => addMission('My Mission is...')}>Create Mission Statement</button>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {rootMissions.map(mission => (
-                                <MissionCard key={mission.id} mission={mission} isRoot />
-                            ))}
-                        </div>
+                        rootMissions.map(mission => (
+                            <MissionCard key={mission.id} mission={mission} isRoot />
+                        ))
                     )}
                 </div>
             </section>
 
-            {/* 2. COMPASS: Values */}
-            <section style={{ maxWidth: '600px' }}>
-                {/* Core Values */}
-                <ListSection
-                    title="Core Values"
-                    icon={<Heart size={18} style={{ color: '#ef4444' }} />}
-                    items={safeValues}
-                    onAdd={addValue}
-                    onUpdate={updateValue}
-                    onDelete={deleteValue}
-                    placeholder="Add a core value..."
-                    emptyMessage="What principles guide you?"
-                    accentColor="rgba(239, 68, 68, 0.1)"
-                />
+            {/* 2. COMPASS: Values & Vision */}
+            <section>
+                <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Compass size={22} className="text-primary" />
+                    <span>Inner Compass</span>
+                </h3>
+                <div style={{ maxWidth: '600px' }}>
+                    {/* Core Values */}
+                    <ListSection
+                        title="Core Values"
+                        icon={<Heart size={18} style={{ color: '#ef4444' }} />}
+                        items={safeValues}
+                        onAdd={addValue}
+                        onUpdate={updateValue}
+                        onDelete={deleteValue}
+                        placeholder="Add a core value..."
+                        emptyMessage="What principles guide you?"
+                        accentColor="rgba(239, 68, 68, 0.1)"
+                    />
+                </div>
             </section>
 
 
-        </div >
+        </div>
     );
 }
 
@@ -441,13 +455,13 @@ function MissionCard({ mission, isRoot }) {
     // Root Mission Card
     return (
         <div
+            className="glass-panel"
             style={{
-                padding: '1.5rem',
+                padding: '2rem',
                 borderRadius: 'var(--radius-lg)',
                 marginBottom: '1rem',
                 borderLeft: '4px solid var(--color-primary)',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.05)'
+                background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))'
             }}
         >
             <div
