@@ -19,6 +19,68 @@ import Sidebar from "./components/layout/Sidebar";
 import WelcomePage from "./components/layout/WelcomePage";
 import { useDemoLoader } from "./hooks/useDemoLoader";
 
+// Backend warm-up on app load (Render free tier goes to sleep after 15min inactivity)
+const API_URL = import.meta.env.VITE_API_URL;
+
+function BackendWarmup() {
+  const [isWaking, setIsWaking] = useState(false);
+
+  useEffect(() => {
+    const wakeUpBackend = async () => {
+      try {
+        console.log("🔄 Waking up backend...");
+        setIsWaking(true);
+        const response = await fetch(`${API_URL}/actuator/health`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+        if (response.ok) {
+          console.log("✅ Backend is awake!");
+        }
+      } catch (error) {
+        console.log("⏳ Backend is starting up... (this may take 30-60 seconds)");
+      } finally {
+        setIsWaking(false);
+      }
+    };
+
+    wakeUpBackend();
+  }, []);
+
+  // Show subtle indicator while waking up
+  if (isWaking) {
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '1rem',
+        right: '1rem',
+        background: 'rgba(99, 102, 241, 0.9)',
+        color: 'white',
+        padding: '0.5rem 1rem',
+        borderRadius: '8px',
+        fontSize: '0.8rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        zIndex: 9999,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+      }}>
+        <span style={{
+          width: '8px',
+          height: '8px',
+          background: '#fff',
+          borderRadius: '50%',
+          animation: 'pulse 1s infinite'
+        }}></span>
+        Connecting to server...
+        <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function AppContent() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMissionCollapsed, setMissionCollapsed] = useState(false);
@@ -650,7 +712,10 @@ function AppContent() {
 
 function App() {
   return (
-    <AppContent />
+    <>
+      <BackendWarmup />
+      <AppContent />
+    </>
   );
 }
 
