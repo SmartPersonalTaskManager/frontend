@@ -228,7 +228,7 @@ function AppContent() {
                   : activeTab === "review"
                     ? "Weekly Review"
                     : activeTab === "mission"
-                      ? "My Mission"
+                      ? "Mission"
                       : activeTab === "stats"
                         ? "Insights"
                         : activeTab}

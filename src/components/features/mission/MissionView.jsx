@@ -101,13 +101,9 @@ function MissionViewContent({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: '1100px', margin: '0 auto' }}>
 
             {/* 1. HERO: Personal Mission Statement */}
+            {/* 1. HERO: Mission Statement Content */}
             <section>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem' }}>
-                    <div>
-                        <h2 className="text-gradient-primary" style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Personal Mission</h2>
-                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Your ultimate core purpose.</p>
-                    </div>
-                </div>
+                {/* Header removed as per user request */}
 
                 {rootMissions.length === 0 ? (
                     <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', borderStyle: 'dashed' }}>
