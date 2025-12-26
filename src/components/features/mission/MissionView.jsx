@@ -103,7 +103,19 @@ function MissionViewContent({
             {/* 1. HERO: Personal Mission Statement */}
             {/* 1. HERO: Mission Statement Content */}
             <section>
-                {/* Header removed as per user request */}
+                {/* Header with Create button when missions exist */}
+                {rootMissions.length > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => addMission('My New Mission is...')}
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                        >
+                            <Plus size={16} style={{ marginRight: '0.5rem' }} />
+                            Create Mission
+                        </button>
+                    </div>
+                )}
 
                 {rootMissions.length === 0 ? (
                     <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', borderStyle: 'dashed' }}>
@@ -228,6 +240,7 @@ function ListItem({ item, onUpdate, onDelete }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [text, setText] = useState(item.text);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const showToast = useToast();
 
@@ -258,17 +271,83 @@ function ListItem({ item, onUpdate, onDelete }) {
     }
 
     return (
-        <div
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)' }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <span style={{ flex: 1, marginRight: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{item.text}</span>
-            <div style={{ display: 'flex', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s' }}>
-                <button className="btn btn-ghost" onClick={() => setIsEditing(true)} style={{ padding: '0.25rem' }}><Edit2 size={14} /></button>
-                <button className="btn btn-ghost" onClick={() => onDelete(item.id)} style={{ padding: '0.25rem', color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
+        <>
+            <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)' }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                <span style={{ flex: 1, marginRight: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{item.text}</span>
+                <div style={{ display: 'flex', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s' }}>
+                    <button className="btn btn-ghost" onClick={() => setIsEditing(true)} style={{ padding: '0.25rem' }}><Edit2 size={14} /></button>
+                    <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(true)} style={{ padding: '0.25rem', color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
+                </div>
             </div>
-        </div>
+
+            {/* Delete Confirmation */}
+            {showDeleteConfirm && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }} onClick={() => setShowDeleteConfirm(false)}>
+                    <div style={{
+                        background: '#1e293b',
+                        padding: '1.5rem',
+                        borderRadius: '12px',
+                        maxWidth: '350px',
+                        width: '90%',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#ef4444' }}>Delete Value?</h3>
+                        <p style={{ color: '#94a3b8', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                            Delete "<strong style={{ color: '#fff' }}>{item.text}</strong>"?
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '6px',
+                                    color: '#94a3b8',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onDelete(item.id);
+                                    setShowDeleteConfirm(false);
+                                }}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: '#ef4444',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
     );
 }
 
@@ -280,6 +359,7 @@ function MissionCard({ mission, isRoot }) {
     const [newRoleText, setNewRoleText] = useState('');
     const [editText, setEditText] = useState(mission.text);
     const [isHovered, setIsHovered] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const subMissions = getSubMissions(mission.id);
 
     const showToast = useToast();
@@ -406,7 +486,7 @@ function MissionCard({ mission, isRoot }) {
                     <button className="btn btn-ghost" onClick={() => setIsEditing(true)} title="Edit Mission">
                         <Edit2 size={18} />
                     </button>
-                    <button className="btn btn-ghost" onClick={() => deleteMission(mission.id)} title="Delete Mission" style={{ color: '#ef4444' }}>
+                    <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(true)} title="Delete Mission" style={{ color: '#ef4444' }}>
                         <Trash2 size={18} />
                     </button>
                 </div>
@@ -470,6 +550,73 @@ function MissionCard({ mission, isRoot }) {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: '#1e293b',
+                        padding: '2rem',
+                        borderRadius: '16px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>🗑️</span>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#ef4444' }}>Delete {isRoot ? 'Mission' : 'Submission'}?</h3>
+                        </div>
+                        <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                            Are you sure you want to delete <strong style={{ color: '#fff' }}>"{mission.text}"</strong>?
+                            {subMissions.length > 0 && <><br /><br /><strong style={{ color: '#ef4444' }}>Warning:</strong> This will also delete {subMissions.length} submission{subMissions.length > 1 ? 's' : ''}.</>}
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                style={{
+                                    padding: '0.6rem 1.25rem',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    color: '#94a3b8',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    deleteMission(mission.id);
+                                    setShowDeleteConfirm(false);
+                                }}
+                                style={{
+                                    padding: '0.6rem 1.25rem',
+                                    background: '#ef4444',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 }
