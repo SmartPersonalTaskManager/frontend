@@ -64,13 +64,19 @@ export default function StatsView() {
             let mId = 'unlinked';
             // Find which root mission this task belongs to
             if (t.missionId) {
-                // If t.missionId is a sub-mission, we need to find its root parent
-                // But simplified logic: check if t.missionId exists in our list.
-                // Since missions list is flat, we can look it up.
-                const mission = missions.find(m => m.id === t.missionId);
+                // Determine if t.missionId is a raw ID or composite
+                // TaskContext usually converts to raw before saving, but local state might be mixed?
+                // Actually t.missionId from backend is raw Long.
+                // But missions list now has composite IDs 'mission-X' or 'submission-X'.
+
+                // We need to find the mission in our Context list that matches this raw ID
+                // The mission in context has property 'realId'.
+                const mission = missions.find(m => m.realId === t.missionId && (m.id.startsWith('submission-') || m.id.startsWith('mission-')));
+
                 if (mission) {
                     if (mission.parentId) {
                         // It's a submission, find parent
+                        // parentId in mission context is now a composite string like 'mission-1'
                         const parent = missions.find(p => p.id === mission.parentId);
                         if (parent) mId = parent.id;
                     } else {
