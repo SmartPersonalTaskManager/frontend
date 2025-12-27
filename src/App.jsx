@@ -81,6 +81,156 @@ function BackendWarmup() {
   return null;
 }
 
+// Mini Calendar Component
+function MiniCalendar({ tasks }) {
+  const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+
+  // Get first day of month and total days
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Check if a date has tasks
+  const hasTasksOnDate = (day) => {
+    const dateStr = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+    return tasks.some(task => task.dueDate && task.dueDate.startsWith(dateStr));
+  };
+
+  const today = now.getDate();
+  const isCurrentMonth = currentMonth === now.getMonth() && currentYear === now.getFullYear();
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const goToPrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  // Generate calendar days
+  const days = [];
+  for (let i = 0; i < firstDay; i++) {
+    days.push(<div key={`empty-${i}`} style={{ aspectRatio: '1' }} />);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = day === today && isCurrentMonth;
+    const hasTasks = hasTasksOnDate(day);
+
+    days.push(
+      <div
+        key={day}
+        style={{
+          aspectRatio: '1',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          borderRadius: '6px',
+          fontSize: '0.85rem',
+          background: isToday ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+          color: isToday ? '#fff' : '#94a3b8',
+          fontWeight: isToday ? 600 : 400,
+        }}
+      >
+        {day}
+        {hasTasks && (
+          <div style={{
+            position: 'absolute',
+            bottom: '4px',
+            width: '4px',
+            height: '4px',
+            borderRadius: '50%',
+            background: '#a855f7'
+          }} />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Header with navigation */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '0.75rem'
+      }}>
+        <button
+          onClick={goToPrevMonth}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: '0.25rem 0.5rem',
+            fontSize: '1.2rem',
+            transition: 'color 0.2s',
+            lineHeight: 1
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+        >
+          ‹
+        </button>
+
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, textAlign: 'center' }}>
+          {monthName}
+        </div>
+
+        <button
+          onClick={goToNextMonth}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: '0.25rem 0.5rem',
+            fontSize: '1.2rem',
+            transition: 'color 0.2s',
+            lineHeight: 1
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+        >
+          ›
+        </button>
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        gap: '4px'
+      }}>
+        {/* Day headers */}
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <div key={i} style={{
+            textAlign: 'center',
+            fontSize: '0.7rem',
+            color: 'var(--color-text-muted)',
+            fontWeight: 600,
+            marginBottom: '4px'
+          }}>
+            {d}
+          </div>
+        ))}
+        {days}
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMissionCollapsed, setMissionCollapsed] = useState(false);
@@ -92,6 +242,7 @@ function AppContent() {
   const [backendStatus, setBackendStatus] = useState('unknown'); // 'active', 'sleeping', 'waking', 'unknown'
   const [backendWaking, setBackendWaking] = useState(false);
   const [wakeDuration, setWakeDuration] = useState(0);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -153,26 +304,65 @@ function AppContent() {
     setWakeDuration(0);
 
     const startTime = Date.now();
+    const maxWaitTime = 90000; // 90 seconds max
+    const pollInterval = 3000; // Check every 3 seconds
+
     const durationInterval = setInterval(() => {
-      setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setWakeDuration(elapsed);
+
+      // Timeout protection
+      if (elapsed * 1000 >= maxWaitTime) {
+        clearInterval(durationInterval);
+        setBackendStatus('sleeping');
+        setBackendWaking(false);
+      }
     }, 1000);
 
-    try {
-      // Any HTTP response means backend is awake
-      await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Poll until backend responds or timeout
+    const pollBackend = async () => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= maxWaitTime) {
+        clearInterval(durationInterval);
+        setBackendStatus('sleeping');
+        setBackendWaking(false);
+        return;
+      }
 
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/actuator/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5 second timeout per request
+        });
+
+        if (response.ok) {
+          clearInterval(durationInterval);
+          setBackendStatus('active');
+          setBackendWaking(false);
+          setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
+          return;
+        }
+      } catch (error) {
+        // Continue polling
+      }
+
+      // Schedule next poll
+      setTimeout(pollBackend, pollInterval);
+    };
+
+    // Initial ping to wake up, then start polling
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/actuator/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)
+      });
+      // Immediate success
       clearInterval(durationInterval);
       setBackendStatus('active');
       setBackendWaking(false);
-      setWakeDuration(Math.floor((Date.now() - startTime) / 1000));
     } catch (error) {
-      clearInterval(durationInterval);
-      setBackendStatus('sleeping');
-      setBackendWaking(false);
-      console.error('Backend wake failed:', error);
+      // Start polling
+      setTimeout(pollBackend, pollInterval);
     }
   };
 
@@ -358,19 +548,58 @@ function AppContent() {
               <div style={{ position: "relative" }}>
                 <NotificationsWidget />
               </div>
-              <div
-                className="glass-panel"
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "var(--radius-xl)",
-                  fontSize: "0.875rem",
-                }}
-              >
-                {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
+              <div style={{ position: "relative" }}>
+                <div
+                  className="glass-panel"
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    borderRadius: "var(--radius-xl)",
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = ""}
+                >
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+
+                {/* Mini Calendar Popup */}
+                {showCalendar && (
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      onClick={() => setShowCalendar(false)}
+                      style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 999
+                      }}
+                    />
+
+                    {/* Calendar */}
+                    <div style={{
+                      position: "absolute",
+                      top: "calc(100% + 0.5rem)",
+                      right: 0,
+                      background: "linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "var(--radius-lg)",
+                      padding: "1rem",
+                      boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+                      backdropFilter: "blur(12px)",
+                      zIndex: 1000,
+                      minWidth: "280px"
+                    }}>
+                      <MiniCalendar tasks={tasks} />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </header>
@@ -596,46 +825,115 @@ function AppContent() {
                   </div>
 
                   {/* Backend Status Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Backend Status</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Monitor and manage backend server availability.</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.25rem' }}>Backend Status</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                          {backendStatus === 'active'
+                            ? 'Server is running and ready.'
+                            : backendWaking
+                              ? 'Free tier server is spinning up...'
+                              : 'Server may be sleeping (free tier limitation).'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={wakeBackend}
+                        disabled={backendWaking || backendStatus === 'active'}
+                        style={{
+                          height: "42px",
+                          minWidth: "140px",
+                          padding: "0 1rem",
+                          background: backendWaking
+                            ? "rgba(168, 85, 247, 0.2)"
+                            : backendStatus === 'active'
+                              ? "rgba(16, 185, 129, 0.1)"
+                              : "rgba(168, 85, 247, 0.1)",
+                          color: backendStatus === 'active' ? "#34d399" : "#b57bfc",
+                          border: backendStatus === 'active'
+                            ? "1px solid rgba(16, 185, 129, 0.2)"
+                            : "1px solid rgba(168, 85, 247, 0.2)",
+                          borderRadius: "var(--radius-md)",
+                          cursor: backendWaking || backendStatus === 'active' ? "not-allowed" : "pointer",
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem'
+                        }}
+                        onMouseEnter={(e) => !backendWaking && backendStatus !== 'active' && (e.currentTarget.style.background = "rgba(168, 85, 247, 0.2)")}
+                        onMouseLeave={(e) => !backendWaking && backendStatus !== 'active' && (e.currentTarget.style.background = "rgba(168, 85, 247, 0.1)")}
+                      >
+                        {backendWaking ? (
+                          <>
+                            <span className="loading-spinner" style={{
+                              width: '16px',
+                              height: '16px',
+                              border: '2px solid rgba(255,255,255,0.3)',
+                              borderTop: '2px solid white',
+                              borderRadius: '50%',
+                              animation: 'spin 0.8s linear infinite'
+                            }}></span>
+                            {wakeDuration}s
+                          </>
+                        ) : backendStatus === 'active' ? 'Active' : 'Wake Server'}
+                      </button>
                     </div>
-                    <button
-                      onClick={wakeBackend}
-                      disabled={backendWaking || backendStatus === 'active'}
-                      style={{
-                        height: "42px",
-                        minWidth: "140px",
-                        padding: "0 1rem",
-                        background: backendWaking ? "rgba(168, 85, 247, 0.5)" : backendStatus === 'active' ? "rgba(16, 185, 129, 0.2)" : "#a855f7",
-                        color: backendStatus === 'active' ? "#34d399" : "white",
-                        border: backendStatus === 'active' ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
-                        borderRadius: "var(--radius-md)",
-                        cursor: backendWaking || backendStatus === 'active' ? "not-allowed" : "pointer",
-                        fontWeight: 600,
-                        fontSize: "0.9rem",
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      {backendWaking ? (
-                        <>
-                          <span className="loading-spinner" style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid rgba(255,255,255,0.3)',
-                            borderTop: '2px solid white',
-                            borderRadius: '50%',
-                            animation: 'spin 0.8s linear infinite'
-                          }}></span>
-                          Waking...
-                        </>
-                      ) : backendStatus === 'active' ? 'Active' : 'Wake Backend'}
-                    </button>
+
+                    {/* Progress Section - Only shown while waking */}
+                    {backendWaking && (
+                      <div style={{
+                        padding: '1rem',
+                        background: 'rgba(168, 85, 247, 0.05)',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid rgba(168, 85, 247, 0.15)'
+                      }}>
+                        {/* Progress Bar */}
+                        <div style={{
+                          height: '6px',
+                          background: 'rgba(255,255,255,0.1)',
+                          borderRadius: '3px',
+                          overflow: 'hidden',
+                          marginBottom: '0.75rem'
+                        }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${Math.min((wakeDuration / 60) * 100, 100)}%`,
+                            background: 'linear-gradient(90deg, #a855f7, #6366f1)',
+                            borderRadius: '3px',
+                            transition: 'width 1s ease-out'
+                          }} />
+                        </div>
+
+                        {/* Status Message */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ fontSize: '0.85rem', color: '#b57bfc' }}>
+                            {wakeDuration < 10
+                              ? '☁️ Sending wake-up signal...'
+                              : wakeDuration < 30
+                                ? '⚡ Server is booting up...'
+                                : wakeDuration < 50
+                                  ? '🔧 Initializing services...'
+                                  : '⏳ Almost there, hang tight...'}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                            ~{Math.max(60 - wakeDuration, 5)}s remaining
+                          </div>
+                        </div>
+
+                        {/* Helpful Note */}
+                        <div style={{
+                          marginTop: '0.75rem',
+                          fontSize: '0.75rem',
+                          color: 'var(--color-text-muted)',
+                          lineHeight: '1.4'
+                        }}>
+                          💡 Free tier servers sleep after 15 min of inactivity. First request takes ~30-60s to wake up.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
