@@ -157,8 +157,46 @@ export default function StatsView() {
         }).length;
         const inProgressSubs = totalSubs - completedSubs;
 
-        return { completedTasks, inProgressTasks, completedSubs, inProgressSubs };
-    }, [tasks, selectedMissionId, missions]);
+        // 3. Mission Stats (only for "All Missions" view)
+        let completedMissions = 0;
+        let inProgressMissions = 0;
+
+        if (selectedMissionId === 'all') {
+            const rootMissions = getRootMissions().filter(m => !m.isArchived);
+
+            rootMissions.forEach(rootMission => {
+                // Get all submissions for this mission
+                const missionSubmissions = missions.filter(m => m.parentId === rootMission.id && !m.isArchived);
+
+                if (missionSubmissions.length === 0) {
+                    // No submissions = in progress
+                    inProgressMissions++;
+                } else {
+                    // Check if all submissions are complete
+                    const allSubsComplete = missionSubmissions.every(s => {
+                        if (s.status === 'done') return true;
+                        const subTasks = tasks.filter(t => !t.isArchived && t.missionId === s.realId);
+                        return subTasks.length > 0 && subTasks.every(t => t.status === 'done');
+                    });
+
+                    if (allSubsComplete) {
+                        completedMissions++;
+                    } else {
+                        inProgressMissions++;
+                    }
+                }
+            });
+        }
+
+        return {
+            completedTasks,
+            inProgressTasks,
+            completedSubs,
+            inProgressSubs,
+            completedMissions,
+            inProgressMissions
+        };
+    }, [tasks, selectedMissionId, missions, getRootMissions]);
 
 
     return (
@@ -293,53 +331,190 @@ export default function StatsView() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-                    {/* 1. Completed Tasks */}
-                    <div style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#10b981' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{filteredStats.completedTasks}</span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '0.25rem' }}>Completed Tasks</span>
+                    {/* 1. TASK Card */}
+                    <div style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        padding: '1.25rem',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'rgba(30, 41, 59, 0.4)',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        {/* Left Vertical Bar */}
+                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
+
+                        {/* Header */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tasks</span>
                         </div>
-                        <div style={{ padding: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', color: '#10b981' }}>
-                            <CheckCircle size={20} />
+
+                        {/* Progress Bar with Labels */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedTasks}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
+                            </div>
+
+                            <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: `${(filteredStats.completedTasks + filteredStats.inProgressTasks) > 0
+                                        ? (filteredStats.completedTasks / (filteredStats.completedTasks + filteredStats.inProgressTasks)) * 100
+                                        : 0}%`,
+                                    background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+                                    boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
+                                    transition: 'width 0.5s ease-out',
+                                    position: 'relative'
+                                }}>
+                                    {/* Progress Thumb */}
+                                    {(filteredStats.completedTasks + filteredStats.inProgressTasks) > 0 && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            right: '-10px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
+                                            boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
+                                            border: '2px solid rgba(30, 41, 59, 0.8)',
+                                            zIndex: 2
+                                        }} />
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressTasks}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* 2. In Progress Tasks */}
-                    <div style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#f59e0b' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{filteredStats.inProgressTasks}</span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '0.25rem' }}>In Progress Tasks</span>
+                    {/* 2. SUBMISSION Card */}
+                    <div style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        padding: '1.25rem',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'rgba(30, 41, 59, 0.4)',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        {/* Left Vertical Bar */}
+                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
+
+                        {/* Header */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Submissions</span>
                         </div>
-                        <div style={{ padding: '0.5rem', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', color: '#f59e0b' }}>
-                            <TrendingUp size={20} />
+
+                        {/* Progress Bar with Labels */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedSubs}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
+                            </div>
+
+                            <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: `${(filteredStats.completedSubs + filteredStats.inProgressSubs) > 0
+                                        ? (filteredStats.completedSubs / (filteredStats.completedSubs + filteredStats.inProgressSubs)) * 100
+                                        : 0}%`,
+                                    background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+                                    boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
+                                    transition: 'width 0.5s ease-out',
+                                    position: 'relative'
+                                }}>
+                                    {/* Progress Thumb */}
+                                    {(filteredStats.completedSubs + filteredStats.inProgressSubs) > 0 && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            right: '-10px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '50%',
+                                            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
+                                            boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
+                                            border: '2px solid rgba(30, 41, 59, 0.8)',
+                                            zIndex: 2
+                                        }} />
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressSubs}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* 3. Completed Submissions */}
-                    <div style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#8b5cf6' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{filteredStats.completedSubs}</span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '0.25rem' }}>Completed Submissions</span>
-                        </div>
-                        <div style={{ padding: '0.5rem', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px', color: '#8b5cf6' }}>
-                            <CheckCircle size={20} />
-                        </div>
-                    </div>
+                    {/* 3. MISSION Card - Only visible when "All Missions" is selected */}
+                    {selectedMissionId === 'all' && (
+                        <div style={{
+                            position: 'relative',
+                            overflow: 'hidden',
+                            padding: '1.25rem',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'rgba(30, 41, 59, 0.4)',
+                            border: '1px solid rgba(255,255,255,0.05)'
+                        }}>
+                            {/* Left Vertical Bar */}
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
 
-                    {/* 4. In Progress Submissions */}
-                    <div style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#ec4899' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{filteredStats.inProgressSubs}</span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '0.25rem' }}>In Progress Submissions</span>
+                            {/* Header */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Missions</span>
+                            </div>
+
+                            {/* Progress Bar with Labels */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedMissions}</span>
+                                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
+                                </div>
+
+                                <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                                    <div style={{
+                                        height: '100%',
+                                        width: `${(filteredStats.completedMissions + filteredStats.inProgressMissions) > 0
+                                            ? (filteredStats.completedMissions / (filteredStats.completedMissions + filteredStats.inProgressMissions)) * 100
+                                            : 0}%`,
+                                        background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+                                        boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
+                                        transition: 'width 0.5s ease-out',
+                                        position: 'relative'
+                                    }}>
+                                        {/* Progress Thumb */}
+                                        {(filteredStats.completedMissions + filteredStats.inProgressMissions) > 0 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                right: '-10px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, #818cf8, #6366f1)',
+                                                boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
+                                                border: '2px solid rgba(30, 41, 59, 0.8)',
+                                                zIndex: 2
+                                            }} />
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
+                                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressMissions}</span>
+                                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ padding: '0.5rem', background: 'rgba(236, 72, 153, 0.1)', borderRadius: '8px', color: '#ec4899' }}>
-                            <TrendingUp size={20} />
-                        </div>
-                    </div>
+                    )}
 
                 </div>
 

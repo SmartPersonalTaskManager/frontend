@@ -6,13 +6,13 @@ import { GoogleCalendarContext } from './GoogleCalendarContext';
 const TaskContext = createContext();
 
 const DEFAULT_CONTEXTS = [
-    { id: 'c1', name: '@home', icon: '🏠' },
-    { id: 'c2', name: '@work', icon: '💼' },
-    { id: 'c3', name: '@computer', icon: '💻' },
-    { id: 'c4', name: '@phone', icon: '📱' },
-    { id: 'c5', name: '@errands', icon: '🚗' },
-    { id: 'c6', name: '@waiting', icon: '⏳' },
-    { id: 'c7', name: '@anywhere', icon: '🌍' }
+    { id: 'c1', name: '@home' },
+    { id: 'c2', name: '@work' },
+    { id: 'c3', name: '@computer' },
+    { id: 'c4', name: '@phone' },
+    { id: 'c5', name: '@errands' },
+    { id: 'c6', name: '@waiting' },
+    { id: 'c7', name: '@anywhere' }
 ];
 
 export function TaskProvider({ children }) {
@@ -96,7 +96,7 @@ export function TaskProvider({ children }) {
                     const newContexts = [];
                     for (const ctx of DEFAULT_CONTEXTS) {
                         try {
-                            const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name, icon: ctx.icon });
+                            const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name });
                             newContexts.push(newContext);
                         } catch (e) {
                             console.error("Error seeding context", e);
@@ -263,12 +263,12 @@ export function TaskProvider({ children }) {
 
     const deletePermanently = deleteTask;
 
-    const addContext = async (name, icon = '🏷️') => {
+    const addContext = async (name) => {
         const userId = localStorage.getItem("sptm_userId");
         if (!userId) return;
 
         try {
-            const newContext = await api.post(`/contexts?userId=${userId}`, { name, icon });
+            const newContext = await api.post(`/contexts?userId=${userId}`, { name });
             setContexts(prev => [...prev, newContext]);
         } catch (error) {
             console.error("Failed to add context:", error);
@@ -288,16 +288,29 @@ export function TaskProvider({ children }) {
         const userId = localStorage.getItem("sptm_userId");
         if (!userId) return;
 
+        // First, delete all existing contexts
+        for (const ctx of contexts) {
+            try {
+                await api.delete(`/contexts/${ctx.id}`);
+            } catch (e) {
+                console.error("Error deleting context during restore", e);
+            }
+        }
+
+        // Clear local state
+        setContexts([]);
+
         // Add all defaults to DB
+        const newContexts = [];
         for (const ctx of DEFAULT_CONTEXTS) {
             try {
-                // Check if already exists? Too expensive. Just simplified:
-                const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name, icon: ctx.icon });
-                setContexts(prev => [...prev, newContext]);
+                const newContext = await api.post(`/contexts?userId=${userId}`, { name: ctx.name });
+                newContexts.push(newContext);
             } catch (e) {
                 console.error("Error restoring context", e);
             }
         }
+        setContexts(newContexts);
     };
 
     return (

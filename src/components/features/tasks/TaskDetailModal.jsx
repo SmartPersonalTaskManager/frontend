@@ -259,16 +259,7 @@ export default function TaskDetailModal({ task, onClose }) {
                                             position: 'relative'
                                         }}
                                     >
-                                        {contexts.find(c => c.name === form.context) ? (
-                                            <>
-                                                <span style={{ marginRight: '0.5rem', fontSize: '1rem' }}>
-                                                    {contexts.find(c => c.name === form.context).icon}
-                                                </span>
-                                                {form.context}
-                                            </>
-                                        ) : (
-                                            form.context
-                                        )}
+                                        {form.context}
                                         <ChevronDown size={18} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', transform: showContextSelector ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s' }} />
                                     </button>
 
@@ -310,7 +301,6 @@ export default function TaskDetailModal({ task, onClose }) {
                                                             color: form.context === c.name ? 'white' : 'var(--color-text-muted)'
                                                         }}
                                                     >
-                                                        <span style={{ fontSize: '1rem' }}>{c.icon}</span>
                                                         {c.name}
                                                     </button>
                                                 ))}
@@ -319,10 +309,7 @@ export default function TaskDetailModal({ task, onClose }) {
                                     )}
                                 </div>
                             ) : (
-                                <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {contexts.find(c => c.name === form.context) && (
-                                        <span>{contexts.find(c => c.name === form.context).icon}</span>
-                                    )}
+                                <span style={{ fontSize: '0.9rem' }}>
                                     {form.context}
                                 </span>
                             )}

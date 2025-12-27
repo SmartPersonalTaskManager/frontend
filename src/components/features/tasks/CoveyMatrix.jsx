@@ -90,12 +90,12 @@ export default function CoveyMatrix() {
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            padding: '1.0rem 1.5rem 1rem 1.5rem',
+            padding: '0.5rem 1.5rem 1rem 1.5rem',
             borderRadius: 'var(--radius-lg)',
             overflow: 'visible'
         }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingBottom: '0.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 {/* Left: Title & Filter */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div>
@@ -110,70 +110,95 @@ export default function CoveyMatrix() {
                     </div>
 
 
-                    {/* View Toggle & Context Filter Group */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 
 
 
-                        {/* Context Filter - Custom Dropdown */}
-                        <div style={{ position: 'relative' }}>
-                            <button
-                                onClick={() => setShowContextDropdown(!showContextDropdown)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.6rem',
-                                    background: '#0f172a',
+                </div>
+
+                {/* Right: Actions */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', position: 'relative', marginRight: '0.5rem' }}>
+
+                    {/* Context Filter - Moved & Styled */}
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setShowContextDropdown(!showContextDropdown)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                position: 'relative',
+                                background: '#0f172a',
+                                border: '1px solid transparent',
+                                padding: '0.62rem 1.25rem',
+                                color: 'white',
+                                fontSize: '0.95rem',
+                                lineHeight: '1.5',
+                                minWidth: '140px',
+                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <span style={{ position: 'absolute', left: '1rem', display: 'flex', alignItems: 'center' }}>
+                                <Filter size={16} color="#22d3ee" fill="#22d3ee" style={{ filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.2))' }} />
+                            </span>
+                            <span style={{ whiteSpace: 'nowrap', paddingLeft: '1.4rem' }}>
+                                {activeContextId === 'all' ? 'All Contexts' : (() => {
+                                    const ctx = contexts.find(c => c.id === activeContextId);
+                                    return ctx ? ctx.name : 'Unknown';
+                                })()}
+                            </span>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showContextDropdown && (
+                            <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setShowContextDropdown(false)} />
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 'calc(100% + 6px)',
+                                    left: 0,
+                                    width: '240px',
+                                    background: '#1e293b',
                                     border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '10px',
-                                    padding: '0.5rem 0.8rem',
-                                    color: 'white',
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    minWidth: '160px',
-                                    justifyContent: 'space-between'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span><Filter size={14} /></span>
-                                    <span style={{ whiteSpace: 'nowrap' }}>
-                                        {activeContextId === 'all' ? 'All Contexts' : (() => {
-                                            const ctx = contexts.find(c => c.id === activeContextId);
-                                            return ctx ? <><span style={{ marginRight: '6px' }}>{ctx.icon}</span>{ctx.name}</> : 'Unknown';
-                                        })()}
-                                    </span>
-                                </div>
-                                <ChevronDown size={14} style={{ transform: showContextDropdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {showContextDropdown && (
-                                <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setShowContextDropdown(false)} />
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: 'calc(100% + 6px)',
-                                        left: 0,
-                                        width: '240px',
-                                        background: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-                                        zIndex: 50,
-                                        padding: '0.5rem',
-                                        animation: 'fadeIn 0.1s ease-out'
-                                    }}>
-                                        <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                                    zIndex: 50,
+                                    padding: '0.5rem',
+                                    animation: 'fadeIn 0.1s ease-out'
+                                }}>
+                                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                                        <button
+                                            onClick={() => { setActiveContextId('all'); setShowContextDropdown(false); }}
+                                            style={{
+                                                width: '100%',
+                                                textAlign: 'left',
+                                                padding: '0.5rem 0.75rem',
+                                                borderRadius: '6px',
+                                                background: activeContextId === 'all' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                                color: activeContextId === 'all' ? '#818cf8' : 'white',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.75rem',
+                                                fontSize: '0.9rem',
+                                                marginBottom: '2px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                        >
+                                            All Contexts
+                                        </button>
+                                        {contexts.map(c => (
                                             <button
-                                                onClick={() => { setActiveContextId('all'); setShowContextDropdown(false); }}
+                                                key={c.id}
+                                                onClick={() => { setActiveContextId(c.id); setShowContextDropdown(false); }}
                                                 style={{
                                                     width: '100%',
                                                     textAlign: 'left',
                                                     padding: '0.5rem 0.75rem',
                                                     borderRadius: '6px',
-                                                    background: activeContextId === 'all' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                                                    color: activeContextId === 'all' ? '#818cf8' : 'white',
+                                                    background: activeContextId === c.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                                    color: activeContextId === c.id ? '#818cf8' : 'white',
                                                     border: 'none',
                                                     cursor: 'pointer',
                                                     display: 'flex',
@@ -184,75 +209,43 @@ export default function CoveyMatrix() {
                                                     transition: 'background 0.2s'
                                                 }}
                                             >
-                                                <span>🌍</span> All Contexts
+                                                {c.name}
                                             </button>
-                                            {contexts.map(c => (
-                                                <button
-                                                    key={c.id}
-                                                    onClick={() => { setActiveContextId(c.id); setShowContextDropdown(false); }}
-                                                    style={{
-                                                        width: '100%',
-                                                        textAlign: 'left',
-                                                        padding: '0.5rem 0.75rem',
-                                                        borderRadius: '6px',
-                                                        background: activeContextId === c.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                                                        color: activeContextId === c.id ? '#818cf8' : 'white',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.75rem',
-                                                        fontSize: '0.9rem',
-                                                        marginBottom: '2px',
-                                                        transition: 'background 0.2s'
-                                                    }}
-                                                >
-                                                    <span>{c.icon}</span> {c.name}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0.5rem 0' }}></div>
-
-                                        <button
-                                            onClick={() => {
-                                                containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                // Close dropdown immediately, but maybe delay the modal slightly if desired,
-                                                // though usually for modals immediate is fine. matching user request "sanki... tıklamışız gibi"
-                                                setShowContextDropdown(false);
-                                                setTimeout(() => setShowContextManager(true), 250);
-                                            }}
-                                            style={{
-                                                width: '100%',
-                                                textAlign: 'left',
-                                                padding: '0.5rem 0.75rem',
-                                                borderRadius: '6px',
-                                                background: 'transparent',
-                                                color: '#94a3b8',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.75rem',
-                                                fontSize: '0.85rem',
-                                                transition: 'color 0.2s'
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.color = 'white'}
-                                            onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
-                                        >
-                                            <Settings size={14} /> Manage Contexts
-                                        </button>
+                                        ))}
                                     </div>
-                                </>
-                            )}
-                        </div>
+
+                                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0.5rem 0' }}></div>
+
+                                    <button
+                                        onClick={() => {
+                                            containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            setShowContextDropdown(false);
+                                            setTimeout(() => setShowContextManager(true), 250);
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            textAlign: 'left',
+                                            padding: '0.5rem 0.75rem',
+                                            borderRadius: '6px',
+                                            background: 'transparent',
+                                            color: '#94a3b8',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            fontSize: '0.85rem',
+                                            transition: 'color 0.2s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.color = 'white'}
+                                        onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+                                    >
+                                        <Settings size={14} /> Manage Contexts
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
-
-
-                </div>
-
-                {/* Right: Actions */}
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', position: 'relative', marginRight: '0.5rem' }}>
 
 
                     {/* Quick Inbox */}
@@ -698,14 +691,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                                     minHeight: '42px'
                                 }}
                             >
-                                {contexts.find(c => c.name === form.context) ? (
-                                    <>
-                                        <span style={{ marginRight: '0.5rem' }}>{contexts.find(c => c.name === form.context).icon}</span>
-                                        {form.context}
-                                    </>
-                                ) : (
-                                    form.context
-                                )}
+                                {form.context}
                                 <ChevronDown size={18} style={{ position: 'absolute', right: '10px', top: '50%', pointerEvents: 'none', transform: showContextSelector ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)', transition: 'transform 0.2s' }} />
                             </button>
 
@@ -753,7 +739,6 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                                                     transition: 'background 0.2s'
                                                 }}
                                             >
-                                                <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
                                                 {c.name}
                                             </button>
                                         ))}

@@ -1,32 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTasks } from '../../../context/TaskContext';
 import { X, Plus, Trash2, RotateCcw } from 'lucide-react';
-
-const ICON_OPTIONS = [
-    '🏷️', '🏠', '💼', '💻', '📱', '🚗', '⏳', '🌍',
-    '⚡', '🔥', '⭐', '📅', '🛒', '🎨', '🔧', '🧸',
-    '💊', '🎓', '✈️', '🎵', '🏋️', '🍎', '💡', '📚',
-    '🏃', '🍽️', '🐶', '🎥', '🎮', '⚓'
-];
 
 export default function ContextManagerModal({ onClose }) {
     const { contexts, addContext, deleteContext, restoreContexts } = useTasks();
     const [newContextName, setNewContextName] = useState('');
-    const [newContextIcon, setNewContextIcon] = useState('🏷️');
-    const [showIconPicker, setShowIconPicker] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null); // { type: 'restore' } or { type: 'delete', id: '...' }
-    const pickerRef = useRef(null);
 
-    // Close picker when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (pickerRef.current && !pickerRef.current.contains(event.target)) {
-                setShowIconPicker(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const handleAdd = (e) => {
         e.preventDefault();
@@ -34,9 +14,8 @@ export default function ContextManagerModal({ onClose }) {
         let name = newContextName.trim();
         if (!name.startsWith('@')) name = '@' + name;
 
-        addContext(name, newContextIcon);
+        addContext(name);
         setNewContextName('');
-        setShowIconPicker(false);
     };
 
     const handleConfirm = () => {
@@ -118,71 +97,7 @@ export default function ContextManagerModal({ onClose }) {
                 </div>
 
                 {/* Add Form */}
-                <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', position: 'relative' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '50px' }} ref={pickerRef}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Icon</span>
-                        <button
-                            type="button"
-                            onClick={() => setShowIconPicker(!showIconPicker)}
-                            style={{
-                                width: '100%',
-                                height: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '6px',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                background: 'rgba(0,0,0,0.2)',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontSize: '1.2rem',
-                                lineHeight: 1,
-                                padding: 0
-                            }}
-                        >
-                            {newContextIcon}
-                        </button>
-
-                        {/* Icon Picker Dropdown */}
-                        {showIconPicker && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                width: '340px',
-                                background: '#1e293b',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '8px',
-                                padding: '0.75rem',
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(6, 1fr)',
-                                gap: '0.5rem',
-                                boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                                zIndex: 10
-                            }}>
-                                {ICON_OPTIONS.map(icon => (
-                                    <button
-                                        key={icon}
-                                        type="button"
-                                        onClick={() => { setNewContextIcon(icon); setShowIconPicker(false); }}
-                                        style={{
-                                            background: newContextIcon === icon ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                                            border: newContextIcon === icon ? '1px solid rgba(99, 102, 241, 0.5)' : 'none',
-                                            borderRadius: '4px',
-                                            padding: '0.4rem',
-                                            cursor: 'pointer',
-                                            fontSize: '1.2rem',
-                                            transition: 'background 0.2s'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = newContextIcon === icon ? 'rgba(99, 102, 241, 0.2)' : 'transparent'}
-                                    >
-                                        {icon}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
                         <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Name</span>
                         <input
@@ -202,10 +117,7 @@ export default function ContextManagerModal({ onClose }) {
                     {contexts.length === 0 ? <span className="text-muted text-center text-sm">No custom contexts yet.</span> : null}
                     {contexts.map(ctx => (
                         <div key={ctx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.02)' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem' }}>
-                                <span style={{ fontSize: '1.1rem' }}>{ctx.icon}</span>
-                                <span>{ctx.name}</span>
-                            </span>
+                            <span style={{ fontSize: '0.9rem' }}>{ctx.name}</span>
                             <button
                                 onClick={() => setConfirmAction({ type: 'delete', id: ctx.id })}
                                 style={{ background: 'none', border: 'none', color: '#ef4444', opacity: 0.5, cursor: 'pointer', display: 'flex', padding: '0.25rem' }}
