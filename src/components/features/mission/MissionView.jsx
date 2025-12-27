@@ -68,12 +68,12 @@ export default function MissionView() {
 
     const rootMissions = getRootMissions();
 
-    // If no data at all, show wizard
-    const hasData = rootMissions.length > 0 || safeVisions.length > 0 || safeValues.length > 0;
+    // If no data at all, show wizard - REMOVED per user request
+    // const hasData = rootMissions.length > 0 || safeVisions.length > 0 || safeValues.length > 0;
 
-    if (!hasData) {
-        return <MissionWizard onComplete={() => { }} />;
-    }
+    // if (!hasData) {
+    //     return <MissionWizard onComplete={() => { }} />;
+    // }
 
     return (
         <ToastProvider>
@@ -99,6 +99,22 @@ function MissionViewContent({
 }) {
     const missionRef = useRef(null);
     const valuesRef = useRef(null);
+    const [showAddMissionModal, setShowAddMissionModal] = useState(false);
+    const [newMissionText, setNewMissionText] = useState('');
+
+    const showToast = useToast();
+
+    const handleAddMission = () => {
+        if (newMissionText.length > 100) {
+            showToast("Character limit exceeded! Max 100 characters allowed.");
+            return;
+        }
+        if (newMissionText.trim()) {
+            addMission(newMissionText);
+            setNewMissionText('');
+            setShowAddMissionModal(false);
+        }
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxWidth: '1200px', margin: '0' }}>
@@ -133,7 +149,7 @@ function MissionViewContent({
                         className="btn btn-ghost"
                         onClick={(e) => {
                             e.stopPropagation();
-                            addMission('New Mission');
+                            setShowAddMissionModal(true);
                         }}
                         style={{
                             background: 'rgba(255,255,255,0.2)',
@@ -153,14 +169,28 @@ function MissionViewContent({
                     </button>
                 </div>
 
-                {/* Mission Content */}
-                <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '32rem', overflowY: 'auto', paddingTop: '1rem' }}>
+                {/* Mission Content - Fixed height for 3.1 missions */}
+                <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem', height: '440px', minHeight: '440px', maxHeight: '440px', overflowY: 'auto', paddingTop: '1rem' }}>
                     {rootMissions.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
-                            <Target size={48} style={{ opacity: 0.2, marginBottom: '1rem', marginInline: 'auto' }} />
-                            <h3 style={{ marginBottom: '1rem' }}>Define Your Mission</h3>
-                            <p style={{ marginBottom: '1.5rem', color: 'var(--color-text-muted)' }}>What is your ultimate objective?</p>
-                            <button className="btn btn-primary" onClick={() => addMission('My Mission is...')}>Create Mission Statement</button>
+                        <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.9, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <Target size={54} style={{ opacity: 0.6, marginBottom: '1rem', color: '#818cf8', filter: 'drop-shadow(0 0 12px rgba(129, 140, 248, 0.3))' }} />
+                            <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 600 }}>Define Your Mission</h3>
+                            <p style={{ marginBottom: '1.75rem', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>What is your ultimate objective?</p>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowAddMissionModal(true)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                    boxShadow: '0 4px 20px rgba(99, 102, 241, 0.5)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    padding: '0.85rem 1.75rem',
+                                    fontSize: '1rem',
+                                    fontWeight: 600,
+                                    letterSpacing: '0.02em'
+                                }}
+                            >
+                                Add Your First Mission
+                            </button>
                         </div>
                     ) : (
                         rootMissions.map(mission => (
@@ -186,6 +216,91 @@ function MissionViewContent({
                 />
             </section>
 
+
+
+
+            {/* Add Mission Modal */}
+            {showAddMissionModal && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }} onClick={() => setShowAddMissionModal(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: '#1e293b',
+                        padding: '2rem',
+                        borderRadius: '16px',
+                        maxWidth: '500px',
+                        width: '90%',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>Create New Mission</h3>
+                        </div>
+
+                        <input
+                            type="text"
+                            value={newMissionText}
+                            onChange={e => setNewMissionText(e.target.value)}
+                            placeholder="What is your ultimate objective?"
+                            autoFocus
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                background: 'rgba(0,0,0,0.3)',
+                                color: 'white',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)',
+                                fontSize: '1rem',
+                                fontFamily: 'inherit',
+                                marginBottom: '1.5rem'
+                            }}
+                            onKeyDown={e => e.key === 'Enter' && handleAddMission()}
+                        />
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => {
+                                    setShowAddMissionModal(false);
+                                    setNewMissionText('');
+                                }}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    background: 'transparent',
+                                    color: '#94a3b8',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddMission}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '8px',
+                                    background: '#3b82f6',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Create Mission
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
 
         </div>
     );
@@ -257,10 +372,28 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
                 </button>
             </div>
 
-            <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '17rem', overflowY: 'auto', paddingTop: '1rem' }}>
+            {/* Content area - Fixed height for 5.1 values */}
+            <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '330px', minHeight: '330px', maxHeight: '330px', overflowY: 'auto', paddingTop: '1rem' }}>
                 {items.length === 0 && !isAdding && (
-                    <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>
-                        {emptyMessage}
+                    <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.9, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                        <Heart size={54} style={{ opacity: 0.6, marginBottom: '1rem', color: '#ef4444', filter: 'drop-shadow(0 0 12px rgba(239, 68, 68, 0.3))' }} />
+                        <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 600 }}>Define Your Value</h3>
+                        <p style={{ marginBottom: '1.75rem', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>{emptyMessage}</p>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setIsAdding(true)}
+                            style={{
+                                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                boxShadow: '0 4px 20px rgba(99, 102, 241, 0.5)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                padding: '0.85rem 1.75rem',
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                letterSpacing: '0.02em'
+                            }}
+                        >
+                            Add Your First Value
+                        </button>
                     </div>
                 )}
 

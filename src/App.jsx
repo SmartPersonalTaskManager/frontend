@@ -446,7 +446,6 @@ function AppContent() {
                 }} />
                 <div style={{ textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 500, color: '#fff', marginBottom: '0.5rem' }}>Setting up your workspace...</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>Planting seeds for your missions</p>
                 </div>
                 <style>{`
                     @keyframes pulse {
@@ -815,22 +814,35 @@ function AppContent() {
                         height: "42px",
                         minWidth: "140px",
                         padding: "0 1rem",
-                        background: "rgba(239, 68, 68, 0.1)",
+                        background: isDemoLoading ? "rgba(239, 68, 68, 0.2)" : "rgba(239, 68, 68, 0.1)",
                         color: "#f87171",
                         border: "1px solid rgba(239, 68, 68, 0.2)",
                         borderRadius: "var(--radius-md)",
-                        cursor: "pointer",
+                        cursor: isDemoLoading ? "not-allowed" : "pointer",
                         fontWeight: 600,
                         fontSize: "0.9rem",
                         transition: 'all 0.2s',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        gap: '0.5rem'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
+                      onMouseEnter={(e) => !isDemoLoading && (e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)")}
+                      onMouseLeave={(e) => !isDemoLoading && (e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)")}
                     >
-                      Clear Data
+                      {isDemoLoading ? (
+                        <>
+                          <span className="loading-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite'
+                          }}></span>
+                          Clearing...
+                        </>
+                      ) : 'Clear Data'}
                     </button>
                   </div>
 
@@ -1112,9 +1124,6 @@ function AppContent() {
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 500, color: '#fff', marginBottom: '0.5rem' }}>
                     Setting up your workspace...
                   </h3>
-                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
-                    Planting seeds for your missions
-                  </p>
                 </div>
               )}
 

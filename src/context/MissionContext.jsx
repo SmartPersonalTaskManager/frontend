@@ -106,19 +106,25 @@ export function MissionProvider({ children }) {
                 };
                 const newSub = await api.post(`/missions/${realParentId}/submissions`, payload);
 
-                // Re-fetch and process correctly
-                const data = await api.get(`/missions/user/${userId}`);
-                const flatMissions = processMissionsData(data);
-                setMissions(flatMissions);
-                return newSub;
+                // Optimistic update - add to state without re-fetch
+                const formattedSub = {
+                    ...newSub,
+                    text: newSub.title || text,
+                    parentId: parentId
+                };
+                setMissions(prev => [...prev, formattedSub]);
+                return formattedSub;
             } else {
                 const newMission = await api.post(`/missions?userId=${userId}`, text);
 
-                // Re-fetch to ensure consistency and clean formatting
-                const data = await api.get(`/missions/user/${userId}`);
-                const flatMissions = processMissionsData(data);
-                setMissions(flatMissions);
-                return newMission;
+                // Optimistic update - add to state without re-fetch
+                const formattedMission = {
+                    ...newMission,
+                    text: cleanString(newMission.content || text),
+                    parentId: null
+                };
+                setMissions(prev => [...prev, formattedMission]);
+                return formattedMission;
             }
         } catch (error) {
             console.error("Failed to add mission:", error);
