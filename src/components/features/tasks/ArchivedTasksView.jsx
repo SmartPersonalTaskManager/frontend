@@ -50,8 +50,6 @@ export default function ArchivedTasksView() {
                 paddingBottom: '0.75rem',
                 alignItems: 'center'
             }}>
-                <Archive size={20} className="text-muted" style={{ marginRight: '0.5rem' }} />
-
                 {tabs.map(tab => {
                     return (
                         <button
