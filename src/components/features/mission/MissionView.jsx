@@ -3,7 +3,7 @@ import { useMission } from '../../../context/MissionContext';
 import { useTasks } from '../../../context/TaskContext';
 import MissionWizard from './MissionWizard';
 import MissionHistoryModal from './MissionHistoryModal';
-import { Plus, Edit2, Trash2, Check, X, Compass, Target, Heart, Clock, AlertCircle, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X, Compass, Target, Heart, Clock, AlertCircle, MoreVertical, Archive } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 const ToastContext = createContext();
@@ -639,19 +639,27 @@ function ListItem({ item, onUpdate, onDelete }) {
 }
 
 function MissionCard({ mission, isRoot }) {
-    const { updateMission, deleteMission, addMission, getSubMissions } = useMission();
+    const { updateMission, deleteMission, addMission, getSubMissions, archiveMission } = useMission();
     const { tasks } = useTasks();
     const [isEditing, setIsEditing] = useState(false);
     const [isAddingChild, setIsAddingChild] = useState(false);
+
+    const subMissions = getSubMissions(mission.id);
+
+    // Calculate Mission Completion Status (for Archive)
+    const isMissionComplete = isRoot && subMissions.length > 0 && subMissions.every(sub => {
+        const subTasks = tasks.filter(t => t.missionId === sub.realId);
+        return subTasks.length > 0 && subTasks.every(t => t.status === 'done' || t.isArchived);
+    });
     const [newRoleText, setNewRoleText] = useState('');
     const [editText, setEditText] = useState(mission.text);
     const [isHovered, setIsHovered] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-    const subMissions = getSubMissions(mission.id);
 
     const showToast = useToast();
 
@@ -759,6 +767,24 @@ function MissionCard({ mission, isRoot }) {
                                             style={{ color: '#94a3b8' }}
                                         >
                                             <Edit2 size={18} />
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => {
+                                                if (total > 0 && completed === total) {
+                                                    setShowArchiveConfirm(true);
+                                                    setShowDetailModal(false);
+                                                }
+                                            }}
+                                            title={total > 0 && completed === total ? "Archive Submission" : "Complete all tasks to archive"}
+                                            style={{
+                                                color: '#22c55e',
+                                                opacity: (total > 0 && completed === total) ? 1 : 0.3,
+                                                cursor: (total > 0 && completed === total) ? 'pointer' : 'not-allowed'
+                                            }}
+                                            disabled={!(total > 0 && completed === total)}
+                                        >
+                                            <Archive size={18} />
                                         </button>
                                         <button
                                             className="btn btn-ghost"
@@ -991,6 +1017,73 @@ function MissionCard({ mission, isRoot }) {
                         document.body
                     )
                 }
+
+                {/* Archive Confirmation Modal - Child Card */}
+                {
+                    showArchiveConfirm && createPortal(
+                        <div style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999
+                        }} onClick={() => setShowArchiveConfirm(false)}>
+                            <div onClick={e => e.stopPropagation()} style={{
+                                background: '#1e293b',
+                                padding: '2rem',
+                                borderRadius: '16px',
+                                maxWidth: '400px',
+                                width: '90%',
+                                border: '1px solid rgba(34, 197, 94, 0.2)',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                            }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#22c55e' }}>Archive Submission?</h3>
+                                </div>
+                                <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                                    Are you sure you want to archive <strong style={{ color: '#fff' }}>"{mission.text}"</strong>?
+                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setShowArchiveConfirm(false)}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: 'transparent',
+                                            color: '#94a3b8',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            cursor: 'pointer',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            archiveMission(mission.id);
+                                            setShowArchiveConfirm(false);
+                                        }}
+                                        style={{
+                                            padding: '0.75rem 1.5rem',
+                                            borderRadius: '8px',
+                                            background: '#22c55e',
+                                            color: 'white',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Yes, Archive
+                                    </button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )
+                }
             </div >
         );
     }
@@ -1106,6 +1199,36 @@ function MissionCard({ mission, isRoot }) {
                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                 >
                                     <Edit2 size={16} /> Edit
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isMissionComplete) {
+                                            setShowArchiveConfirm(true);
+                                            setShowMenu(false);
+                                        }
+                                    }}
+                                    className="menu-item"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.75rem 1rem',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#22c55e',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s',
+                                        opacity: isMissionComplete ? 1 : 0.5,
+                                        pointerEvents: isMissionComplete ? 'auto' : 'none',
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Archive size={16} /> Archive
                                 </button>
                                 <button
                                     onClick={(e) => {
@@ -1340,6 +1463,71 @@ function MissionCard({ mission, isRoot }) {
                                 }}
                             >
                                 Yes, Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Archive Confirmation Modal - Root Card */}
+            {showArchiveConfirm && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }} onClick={() => setShowArchiveConfirm(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: '#1e293b',
+                        padding: '2rem',
+                        borderRadius: '16px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        border: '1px solid rgba(34, 197, 94, 0.2)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#22c55e' }}>Archive Mission?</h3>
+                        </div>
+                        <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+                            Are you sure you want to archive <strong style={{ color: '#fff' }}>"{mission.text}"</strong>?
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setShowArchiveConfirm(false)}
+                                style={{
+                                    padding: '0.6rem 1.25rem',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    color: '#94a3b8',
+                                    cursor: 'pointer',
+                                    fontWeight: 500
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    archiveMission(mission.id);
+                                    setShowArchiveConfirm(false);
+                                }}
+                                style={{
+                                    padding: '0.6rem 1.25rem',
+                                    background: '#22c55e',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Yes, Archive
                             </button>
                         </div>
                     </div>

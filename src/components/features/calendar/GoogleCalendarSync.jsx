@@ -17,6 +17,33 @@ export default function GoogleCalendarSync() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncedCount, setSyncedCount] = useState(0);
 
+  // Tarih string'ini güvenli şekilde parse eden yardımcı fonksiyon
+  const parseDateSafely = (dateValue) => {
+    if (!dateValue) return null;
+
+    // Eğer zaten Date objesi ise
+    if (dateValue instanceof Date) {
+      return isNaN(dateValue.getTime()) ? null : dateValue;
+    }
+
+    // String ise parse et
+    if (typeof dateValue === 'string') {
+      // YYYY-MM-DD formatı için özel işlem (timezone sorununu önlemek için)
+      const dateOnlyMatch = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (dateOnlyMatch) {
+        const [, year, month, day] = dateOnlyMatch;
+        // Yerel saat dilimine göre gece yarısı yap
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
+      }
+
+      // Diğer formatlar için standart parse
+      const parsed = new Date(dateValue);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    return null;
+  };
+
   const handleSyncTasksToCalendar = async () => {
     if (!isAuthenticated) {
       setSyncStatus("error");
@@ -26,31 +53,71 @@ export default function GoogleCalendarSync() {
     setSyncStatus("syncing");
     setSyncedCount(0);
     let synced = 0;
+    let skippedNoDate = 0;
+    let skippedInvalidDate = 0;
+
+    // Debug: Mevcut görevleri logla
+    console.log("=== CALENDAR SYNC DEBUG ===");
+    console.log("Total tasks in context:", tasks?.length || 0);
+    console.log("Tasks:", tasks);
 
     try {
-      for (const task of tasks) {
-        if (task.dueDate && task.dueDate !== "") {
-          const calendarEvent = {
-            title: task.title,
-            description: task.description || `Priority: ${task.priority}`,
-            startTime: new Date(task.dueDate).toISOString(),
-            endTime: new Date(
-              new Date(task.dueDate).getTime() + 60 * 60 * 1000
-            ).toISOString(),
-            missionId: task.missionId,
-            taskId: task.id,
-            context: task.context,
-          };
+      // Tarihli görev sayısını kontrol et
+      const tasksWithDates = tasks.filter(task => {
+        const hasDate = task.dueDate && task.dueDate !== "";
+        const parsedDate = parseDateSafely(task.dueDate);
 
-          const result = await createCalendarEvent(calendarEvent);
-          if (result) {
-            synced++;
-          }
+        console.log(`Task "${task.title}": dueDate=${task.dueDate}, hasDate=${hasDate}, parsedDate=${parsedDate}`);
+
+        if (!hasDate) {
+          skippedNoDate++;
+          return false;
+        }
+        if (!parsedDate) {
+          skippedInvalidDate++;
+          console.warn(`Invalid date format for task "${task.title}": ${task.dueDate}`);
+          return false;
+        }
+        return true;
+      });
+
+      console.log(`Found ${tasksWithDates.length} tasks with valid dates (skipped ${skippedNoDate} without date, ${skippedInvalidDate} with invalid date)`);
+
+      // Eğer senkronize edilecek görev yoksa
+      if (tasksWithDates.length === 0) {
+        setSyncedCount(0);
+        setSyncStatus("no_tasks");
+        setTimeout(() => setSyncStatus(null), 5000);
+        return;
+      }
+
+      for (const task of tasksWithDates) {
+        const parsedDate = parseDateSafely(task.dueDate);
+
+        const calendarEvent = {
+          title: task.title,
+          description: task.description || `Priority: ${task.priority}`,
+          startTime: parsedDate.toISOString(),
+          endTime: new Date(parsedDate.getTime() + 60 * 60 * 1000).toISOString(),
+          missionId: task.missionId,
+          taskId: task.id,
+          context: task.context,
+        };
+
+        console.log(`Creating calendar event for "${task.title}":`, calendarEvent);
+
+        const result = await createCalendarEvent(calendarEvent);
+        if (result) {
+          synced++;
+          console.log(`✓ Successfully synced: ${task.title}`);
+        } else {
+          console.warn(`✗ Failed to sync: ${task.title}`);
         }
       }
 
       setSyncedCount(synced);
       setSyncStatus("success");
+      console.log(`=== SYNC COMPLETE: ${synced}/${tasksWithDates.length} tasks synced ===`);
       setTimeout(() => setSyncStatus(null), 3000);
     } catch (err) {
       console.error("Sync error:", err);
@@ -160,6 +227,13 @@ export default function GoogleCalendarSync() {
         <div style={styles.successMessage}>
           <CheckCircle size={16} style={styles.messageIcon} />
           <span>{syncedCount} item(s) processed</span>
+        </div>
+      )}
+
+      {syncStatus === "no_tasks" && (
+        <div style={styles.warningMessage}>
+          <AlertCircle size={16} style={styles.messageIcon} />
+          <span>Senkronize edilecek tarihli görev bulunamadı. Görevlerinize tarih ekleyerek takvime senkronize edebilirsiniz.</span>
         </div>
       )}
 
@@ -304,6 +378,18 @@ const styles = {
     borderRadius: "6px",
     marginBottom: "0.5rem",
     fontSize: "0.85rem",
+  },
+  warningMessage: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "0.5rem",
+    padding: "0.6rem",
+    backgroundColor: "rgba(255, 193, 7, 0.15)",
+    color: "#ffc107",
+    borderRadius: "6px",
+    marginBottom: "0.5rem",
+    fontSize: "0.8rem",
+    lineHeight: "1.4",
   },
   messageIcon: {
     flexShrink: 0,

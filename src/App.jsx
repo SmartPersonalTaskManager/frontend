@@ -247,7 +247,7 @@ function AppContent() {
           <div>
             <h2 style={{ textTransform: "capitalize", margin: 0 }}>
               {activeTab === "archive"
-                ? "Archived Tasks"
+                ? "Archive"
                 : activeTab === "review"
                   ? "Weekly Review"
                   : activeTab === "mission"

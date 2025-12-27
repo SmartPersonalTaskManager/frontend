@@ -34,6 +34,8 @@ export function MissionProvider({ children }) {
                 type: 'mission',
                 text: cleanString(m.content),
                 parentId: null, // Root
+                isArchived: m.archived || false,
+                completedAt: m.completedAt || null,
             });
 
             // Add Children
@@ -45,7 +47,9 @@ export function MissionProvider({ children }) {
                         realId: sub.id,
                         type: 'submission',
                         text: cleanString(sub.title),
-                        parentId: rootId // Link to parent
+                        parentId: rootId, // Link to parent
+                        isArchived: sub.archived || false,
+                        completedAt: sub.completedAt || null,
                     });
                 });
             }
@@ -250,9 +254,74 @@ export function MissionProvider({ children }) {
         }
     };
 
+    // --- Archive Operations for Missions/SubMissions ---
+    const archiveMission = async (id) => {
+        // Optimistic update
+        setMissions(prev => prev.map(m =>
+            m.id === id ? { ...m, isArchived: true, completedAt: new Date().toISOString() } : m
+        ));
+
+        try {
+            if (id.toString().startsWith('submission-')) {
+                const realId = id.replace('submission-', '');
+                await api.put(`/missions/submissions/${realId}/archive`);
+            } else {
+                const realId = id.toString().replace('mission-', '');
+                await api.put(`/missions/${realId}/archive`);
+            }
+        } catch (error) {
+            console.error("Failed to archive mission:", error);
+            // Revert on error
+            setMissions(prev => prev.map(m =>
+                m.id === id ? { ...m, isArchived: false, completedAt: null } : m
+            ));
+        }
+    };
+
+    const unarchiveMission = async (id) => {
+        // Optimistic update
+        setMissions(prev => prev.map(m =>
+            m.id === id ? { ...m, isArchived: false, completedAt: null } : m
+        ));
+
+        try {
+            if (id.toString().startsWith('submission-')) {
+                const realId = id.replace('submission-', '');
+                await api.put(`/missions/submissions/${realId}/unarchive`);
+            } else {
+                const realId = id.toString().replace('mission-', '');
+                await api.put(`/missions/${realId}/unarchive`);
+            }
+        } catch (error) {
+            console.error("Failed to unarchive mission:", error);
+            // Revert on error
+            setMissions(prev => prev.map(m =>
+                m.id === id ? { ...m, isArchived: true } : m
+            ));
+        }
+    };
+
+    const deleteMissionPermanently = async (id) => {
+        // Actually delete from backend
+        setMissions(prev => prev.filter(m => m.id !== id));
+
+        try {
+            if (id.toString().startsWith('submission-')) {
+                const realId = id.replace('submission-', '');
+                await api.delete(`/missions/submissions/${realId}`);
+            } else {
+                const realId = id.toString().replace('mission-', '');
+                await api.delete(`/missions/${realId}`);
+            }
+        } catch (error) {
+            console.error("Failed to delete mission permanently:", error);
+        }
+    };
+
     return (
         <MissionContext.Provider value={{
             missions, addMission, updateMission, deleteMission, getRootMissions, getSubMissions,
+            archiveMission, unarchiveMission, deleteMissionPermanently,
             visions, addVision, updateVision, deleteVision,
             values, addValue, updateValue, deleteValue
         }}>
