@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, useEffect } from 'react';
+import React, { useState, createContext, useContext, useEffect, useRef } from 'react';
 import { useMission } from '../../../context/MissionContext';
 import { useTasks } from '../../../context/TaskContext';
 import MissionWizard from './MissionWizard';
@@ -97,8 +97,11 @@ function MissionViewContent({
     rootMissions, safeVisions, safeValues,
     addMission, addValue, updateValue, deleteValue, addVision, updateVision, deleteVision
 }) {
+    const missionRef = useRef(null);
+    const valuesRef = useRef(null);
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1200px', margin: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxWidth: '1200px', margin: '0' }}>
 
             {/* 1. HERO: Personal Mission Statement */}
             {/* 1. HERO: Mission Statement Content */}
@@ -109,17 +112,20 @@ function MissionViewContent({
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column'
-            }}>
+            }} ref={missionRef}>
                 {/* Mission Container Header */}
                 <div style={{
-                    padding: '1rem',
+                    padding: '0.6rem 1rem',
                     background: 'rgba(129, 140, 248, 0.2)', // Increased opacity for better visibility
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', margin: 0 }}>
+                    <h3
+                        onClick={() => missionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', margin: 0, cursor: 'pointer' }}
+                    >
                         <Target size={20} style={{ color: '#818cf8' }} />
                         <span>Personal Mission</span>
                     </h3>
@@ -148,7 +154,7 @@ function MissionViewContent({
                 </div>
 
                 {/* Mission Content */}
-                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '32rem', overflowY: 'auto', paddingTop: '1rem' }}>
                     {rootMissions.length === 0 ? (
                         <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.7 }}>
                             <Target size={48} style={{ opacity: 0.2, marginBottom: '1rem', marginInline: 'auto' }} />
@@ -165,7 +171,7 @@ function MissionViewContent({
             </section>
 
             {/* 2. COMPASS: Values & Vision */}
-            <section>
+            <section ref={valuesRef}>
                 {/* Core Values */}
                 <ListSection
                     title="Core Values"
@@ -185,9 +191,10 @@ function MissionViewContent({
     );
 }
 
-function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, placeholder, emptyMessage, accentColor = 'rgba(255,255,255,0.05)' }) {
+function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, placeholder, emptyMessage, accentColor = 'rgba(255,255,255,0.05)', scrollRef }) {
     const [isAdding, setIsAdding] = useState(false);
     const [newItemText, setNewItemText] = useState('');
+    const bottomRef = useRef(null);
 
     const showToast = useToast();
 
@@ -213,27 +220,44 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
             overflow: 'hidden'
         }}>
             <div style={{
-                padding: '1rem',
+                padding: '0.7rem 1rem',
                 background: accentColor,
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
             }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', margin: 0 }}>
+                <h3
+                    onClick={() => {
+                        // Scroll to the anchor at the bottom of this list
+                        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem', margin: 0, cursor: 'pointer' }}
+                >
                     {icon} {title}
                 </h3>
                 <button
                     className="btn btn-ghost"
                     onClick={() => setIsAdding(true)}
-                    style={{ background: 'rgba(255,255,255,0.1)', width: '28px', height: '28px', padding: 0, borderRadius: '50%' }}
+                    style={{
+                        background: 'rgba(255,255,255,0.2)',
+                        width: '32px',
+                        height: '32px',
+                        padding: 0,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0
+                    }}
                     title="Add Item"
                 >
-                    <Plus size={16} />
+                    <Plus size={20} color="white" strokeWidth={2.5} />
                 </button>
             </div>
 
-            <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ padding: '0 1rem 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '17rem', overflowY: 'auto', paddingTop: '1rem' }}>
                 {items.length === 0 && !isAdding && (
                     <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>
                         {emptyMessage}
@@ -260,6 +284,9 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
                     </div>
                 )}
             </div>
+
+            {/* Anchor element for scroll targeting - outside scrollable area */}
+            <div ref={bottomRef} />
         </div>
     );
 }
@@ -269,6 +296,7 @@ function ListItem({ item, onUpdate, onDelete }) {
     const [isHovered, setIsHovered] = useState(false);
     const [text, setText] = useState(item.text);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
 
     const showToast = useToast();
 
@@ -283,17 +311,17 @@ function ListItem({ item, onUpdate, onDelete }) {
 
     if (isEditing) {
         return (
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.25rem 0' }}>
                 <input
                     autoFocus
                     type="text"
                     value={text}
                     onChange={e => setText(e.target.value)}
-                    style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white' }}
+                    style={{ flex: 1, padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '1rem' }}
                     onKeyDown={e => e.key === 'Enter' && handleSave()}
                 />
-                <button className="btn btn-ghost success" onClick={handleSave}><Check size={16} /></button>
-                <button className="btn btn-ghost danger" onClick={() => setIsEditing(false)}><X size={16} /></button>
+                <button className="btn btn-ghost success" onClick={handleSave}><Check size={18} /></button>
+                <button className="btn btn-ghost danger" onClick={() => setIsEditing(false)}><X size={18} /></button>
             </div>
         );
     }
@@ -301,14 +329,112 @@ function ListItem({ item, onUpdate, onDelete }) {
     return (
         <>
             <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)' }}
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.75rem 1rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '1.05rem',
+                    letterSpacing: '0.01em'
+                }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 <span style={{ flex: 1, marginRight: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{item.text}</span>
-                <div style={{ display: 'flex', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s' }}>
-                    <button className="btn btn-ghost" onClick={() => setIsEditing(true)} style={{ padding: '0.25rem' }}><Edit2 size={14} /></button>
-                    <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(true)} style={{ padding: '0.25rem', color: 'var(--color-danger)' }}><Trash2 size={14} /></button>
+                <div style={{ position: 'relative', opacity: isHovered || showMenu ? 1 : 0, transition: 'opacity 0.2s' }}>
+                    <button
+                        className="btn btn-ghost"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(!showMenu);
+                        }}
+                        style={{ padding: '0.25rem', color: 'rgba(255,255,255,0.6)' }}
+                    >
+                        <MoreVertical size={18} />
+                    </button>
+
+                    {showMenu && (
+                        <>
+                            <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 40, cursor: 'default' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowMenu(false);
+                                }}
+                            />
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '0.25rem',
+                                background: '#1e293b',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                minWidth: '140px',
+                                zIndex: 50,
+                                overflow: 'hidden'
+                            }}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditing(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="menu-item"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.6rem 1rem',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#e2e8f0',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Edit2 size={14} /> Edit
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowDeleteConfirm(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="menu-item"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.6rem 1rem',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#ef4444',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s',
+                                        borderTop: '1px solid rgba(255,255,255,0.05)'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Trash2 size={14} /> Delete
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -438,7 +564,9 @@ function MissionCard({ mission, isRoot }) {
                     gap: '0.2rem',
                     position: 'relative', // For menu positioning
                     cursor: 'pointer',
-                    transition: 'transform 0.2s, background 0.2s'
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    transform: isHovered ? 'translateY(-3px)' : 'none',
+                    boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
@@ -742,7 +870,8 @@ function MissionCard({ mission, isRoot }) {
                 padding: '0.75rem 1rem 1rem 1rem',
                 borderRadius: 'var(--radius-lg)',
                 borderLeft: '4px solid var(--color-primary)',
-                background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))'
+                background: 'linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4))',
+                flexShrink: 0
             }}
         >
             <div
@@ -783,13 +912,98 @@ function MissionCard({ mission, isRoot }) {
                     )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
-                    <button className="btn btn-ghost" onClick={() => setIsEditing(true)} title="Edit Mission">
-                        <Edit2 size={18} />
+                <div style={{ position: 'relative', opacity: isHovered || showMenu ? 1 : 0, transition: 'opacity 0.2s', flexShrink: 0 }}>
+                    <button
+                        className="btn btn-ghost"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(!showMenu);
+                        }}
+                        style={{ padding: '0.5rem', color: 'rgba(255,255,255,0.7)' }}
+                    >
+                        <MoreVertical size={20} />
                     </button>
-                    <button className="btn btn-ghost" onClick={() => setShowDeleteConfirm(true)} title="Delete Mission" style={{ color: '#ef4444' }}>
-                        <Trash2 size={18} />
-                    </button>
+
+                    {showMenu && (
+                        <>
+                            <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 40, cursor: 'default' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowMenu(false);
+                                }}
+                            />
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '0.5rem',
+                                background: '#1e293b',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '8px',
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                minWidth: '160px',
+                                zIndex: 50,
+                                overflow: 'hidden'
+                            }}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditing(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="menu-item"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.75rem 1rem',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#e2e8f0',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Edit2 size={16} /> Edit
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowDeleteConfirm(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="menu-item"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.75rem 1rem',
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#ef4444',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        transition: 'background 0.2s',
+                                        borderTop: '1px solid rgba(255,255,255,0.05)'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <Trash2 size={16} /> Delete
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -839,7 +1053,7 @@ function MissionCard({ mission, isRoot }) {
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', maxHeight: '19rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
                     {subMissions.map(sub => (
                         <MissionCard key={sub.id} mission={sub} isRoot={false} />
                     ))}
