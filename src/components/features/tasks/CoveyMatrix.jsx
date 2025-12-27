@@ -500,7 +500,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
 
     // Get selected role/submission text for display
     const getSelectedRoleText = () => {
-        if (!form.missionId) return "No specific Link";
+        if (!form.missionId) return "Link to Submission";
         const selected = missions.find(m => m.id === form.missionId);
         return selected ? selected.text : "Unknown Role";
     };
@@ -572,7 +572,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
 
                     {/* Submission Selector Button */}
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Link to Submission</label>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Submission</label>
                         <button
                             type="button"
                             onClick={() => setShowRoleSelector(true)}
@@ -616,13 +616,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                             </div>
 
                             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
-                                <button
-                                    onClick={() => { setForm({ ...form, missionId: '' }); setShowRoleSelector(false); }}
-                                    className="btn btn-ghost"
-                                    style={{ justifyContent: 'flex-start', padding: '0.75rem', border: '1px dashed rgba(255,255,255,0.1)' }}
-                                >
-                                    No Specific Submission
-                                </button>
+
 
                                 {getRootMissions && getRootMissions().map(root => {
                                     const subs = getSubMissions ? getSubMissions(root.id) : [];
@@ -664,7 +658,6 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                             <input
                                 ref={dateRef}
                                 type="date"
-                                min={new Date().toISOString().split('T')[0]} // Prevent past dates
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', cursor: 'pointer' }}
                                 value={form.dueDate}
                                 onChange={e => setForm({ ...form, dueDate: e.target.value })}

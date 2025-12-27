@@ -96,9 +96,64 @@ export default function StatsView() {
             if (t.status === 'done') missionProgress[mId].completed++;
         });
 
+        // --- NEW: Calculate Mission Progress Bars with 3 segments ---
+        // Uses dueDate for completed tasks to determine which week they belonged to
+        const missionProgressBars = getRootMissions()
+            .filter(m => !m.isArchived)
+            .map(rootMission => {
+                // Get all submissions for this mission
+                const subs = missions.filter(m => m.parentId === rootMission.id && !m.isArchived);
+                const subRealIds = subs.map(s => s.realId);
+
+                // Get all tasks linked to submissions of this mission
+                const linkedTasks = tasks.filter(t => {
+                    if (!t.missionId || t.isArchived) return false;
+                    return subRealIds.includes(t.missionId);
+                });
+
+                const totalTasks = linkedTasks.length;
+
+                // Helper: Get the reference date for a task (dueDate if available, else completedAt)
+                const getTaskDate = (task) => {
+                    if (task.dueDate) return new Date(task.dueDate);
+                    if (task.completedAt) return new Date(task.completedAt);
+                    return null;
+                };
+
+                // Count completed tasks BEFORE this week (based on dueDate)
+                const completedBeforeWeek = linkedTasks.filter(t => {
+                    if (t.status !== 'done') return false;
+                    const taskDate = getTaskDate(t);
+                    if (!taskDate) return false;
+                    return taskDate < startOfWeek;
+                }).length;
+
+                // Count completed tasks THIS week (based on dueDate)
+                const completedThisWeek = linkedTasks.filter(t => {
+                    if (t.status !== 'done') return false;
+                    const taskDate = getTaskDate(t);
+                    if (!taskDate) return false;
+                    return taskDate >= startOfWeek && taskDate <= endOfWeek;
+                }).length;
+
+                // Remaining tasks (not yet completed)
+                const remaining = totalTasks - completedBeforeWeek - completedThisWeek;
+
+                return {
+                    missionId: rootMission.id,
+                    missionName: rootMission.text,
+                    totalTasks,
+                    completedBeforeWeek,
+                    completedThisWeek,
+                    remaining
+                };
+            })
+            .filter(mp => mp.totalTasks > 0); // Only show missions with linked tasks
+
         return {
             completedTasks: completedLastWeek,
             missionProgress: Object.values(missionProgress).filter(m => m.total > 0),
+            missionProgressBars,
             dateRangeLabel
         };
     }, [tasks, missions, getRootMissions]);
@@ -207,12 +262,12 @@ export default function StatsView() {
                 ref={statsRef}
                 className="glass-panel"
                 style={{
-                    padding: '1.5rem',
+                    padding: '1rem 1.5rem 1.5rem 1.5rem',
                     borderRadius: 'var(--radius-lg)',
                     height: '100%'
                 }}
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ height: '3.3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingBottom: '0.35rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
                         <h3
                             className="text-gradient-primary"
@@ -335,27 +390,28 @@ export default function StatsView() {
                     <div style={{
                         position: 'relative',
                         overflow: 'hidden',
-                        padding: '1.25rem',
-                        borderRadius: 'var(--radius-lg)',
-                        background: 'rgba(30, 41, 59, 0.4)',
-                        border: '1px solid rgba(255,255,255,0.05)'
+                        padding: '0.85rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        minHeight: '95px'
                     }}>
-                        {/* Left Vertical Bar */}
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
-
                         {/* Header */}
-                        <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ marginBottom: '0.75rem' }}>
                             <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tasks</span>
                         </div>
 
                         {/* Progress Bar with Labels */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedTasks}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedTasks}</span>
                                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
                             </div>
 
-                            <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                            <div style={{ flex: 1, height: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
                                 <div style={{
                                     height: '100%',
                                     width: `${(filteredStats.completedTasks + filteredStats.inProgressTasks) > 0
@@ -363,30 +419,12 @@ export default function StatsView() {
                                         : 0}%`,
                                     background: 'linear-gradient(90deg, #6366f1, #818cf8)',
                                     boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
-                                    transition: 'width 0.5s ease-out',
-                                    position: 'relative'
-                                }}>
-                                    {/* Progress Thumb */}
-                                    {(filteredStats.completedTasks + filteredStats.inProgressTasks) > 0 && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            right: '-10px',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            width: '20px',
-                                            height: '20px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
-                                            boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
-                                            border: '2px solid rgba(30, 41, 59, 0.8)',
-                                            zIndex: 2
-                                        }} />
-                                    )}
-                                </div>
+                                    transition: 'width 0.5s ease-out'
+                                }} />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressTasks}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressTasks}</span>
                                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
                             </div>
                         </div>
@@ -396,27 +434,28 @@ export default function StatsView() {
                     <div style={{
                         position: 'relative',
                         overflow: 'hidden',
-                        padding: '1.25rem',
-                        borderRadius: 'var(--radius-lg)',
-                        background: 'rgba(30, 41, 59, 0.4)',
-                        border: '1px solid rgba(255,255,255,0.05)'
+                        padding: '0.85rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        minHeight: '95px'
                     }}>
-                        {/* Left Vertical Bar */}
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
-
                         {/* Header */}
-                        <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ marginBottom: '0.5rem' }}>
                             <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Submissions</span>
                         </div>
 
                         {/* Progress Bar with Labels */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedSubs}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedSubs}</span>
                                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
                             </div>
 
-                            <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                            <div style={{ flex: 1, height: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
                                 <div style={{
                                     height: '100%',
                                     width: `${(filteredStats.completedSubs + filteredStats.inProgressSubs) > 0
@@ -424,30 +463,12 @@ export default function StatsView() {
                                         : 0}%`,
                                     background: 'linear-gradient(90deg, #6366f1, #818cf8)',
                                     boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
-                                    transition: 'width 0.5s ease-out',
-                                    position: 'relative'
-                                }}>
-                                    {/* Progress Thumb */}
-                                    {(filteredStats.completedSubs + filteredStats.inProgressSubs) > 0 && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            right: '-10px',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            width: '20px',
-                                            height: '20px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #818cf8, #6366f1)',
-                                            boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
-                                            border: '2px solid rgba(30, 41, 59, 0.8)',
-                                            zIndex: 2
-                                        }} />
-                                    )}
-                                </div>
+                                    transition: 'width 0.5s ease-out'
+                                }} />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressSubs}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressSubs}</span>
                                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
                             </div>
                         </div>
@@ -458,27 +479,28 @@ export default function StatsView() {
                         <div style={{
                             position: 'relative',
                             overflow: 'hidden',
-                            padding: '1.25rem',
-                            borderRadius: 'var(--radius-lg)',
-                            background: 'rgba(30, 41, 59, 0.4)',
-                            border: '1px solid rgba(255,255,255,0.05)'
+                            padding: '0.85rem 1.25rem',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'rgba(0,0,0,0.2)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            minHeight: '95px'
                         }}>
-                            {/* Left Vertical Bar */}
-                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(to bottom, #818cf8, #6366f1)', boxShadow: '0 0 10px rgba(99, 102, 241, 0.3)' }} />
-
                             {/* Header */}
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ marginBottom: '0.5rem' }}>
                                 <span style={{ fontSize: '1rem', fontWeight: 600, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Missions</span>
                             </div>
 
                             {/* Progress Bar with Labels */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedMissions}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#818cf8', lineHeight: 1 }}>{filteredStats.completedMissions}</span>
                                     <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Done</span>
                                 </div>
 
-                                <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'visible', position: 'relative' }}>
+                                <div style={{ flex: 1, height: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
                                     <div style={{
                                         height: '100%',
                                         width: `${(filteredStats.completedMissions + filteredStats.inProgressMissions) > 0
@@ -486,30 +508,12 @@ export default function StatsView() {
                                             : 0}%`,
                                         background: 'linear-gradient(90deg, #6366f1, #818cf8)',
                                         boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)',
-                                        transition: 'width 0.5s ease-out',
-                                        position: 'relative'
-                                    }}>
-                                        {/* Progress Thumb */}
-                                        {(filteredStats.completedMissions + filteredStats.inProgressMissions) > 0 && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                right: '-10px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                width: '20px',
-                                                height: '20px',
-                                                borderRadius: '50%',
-                                                background: 'linear-gradient(135deg, #818cf8, #6366f1)',
-                                                boxShadow: '0 0 12px rgba(99, 102, 241, 0.6), 0 2px 4px rgba(0,0,0,0.2)',
-                                                border: '2px solid rgba(30, 41, 59, 0.8)',
-                                                zIndex: 2
-                                            }} />
-                                        )}
-                                    </div>
+                                        transition: 'width 0.5s ease-out'
+                                    }} />
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '50px' }}>
-                                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressMissions}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1 }}>{filteredStats.inProgressMissions}</span>
                                     <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', marginTop: '0.2rem' }}>Active</span>
                                 </div>
                             </div>
@@ -525,12 +529,12 @@ export default function StatsView() {
                 ref={weeklyRef}
                 className="glass-panel"
                 style={{
-                    padding: '1.5rem',
+                    padding: '1rem 1.5rem 1.5rem 1.5rem',
                     borderRadius: 'var(--radius-lg)',
                     height: '100%'
                 }}
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ height: '3.3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingBottom: '0.35rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <h3
                         className="text-gradient-primary"
                         style={{ fontSize: '1.5rem', margin: 0, lineHeight: 1.2, cursor: 'pointer' }}
@@ -543,80 +547,146 @@ export default function StatsView() {
                     </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Mission Progress Bars */}
+                    {weeklyStats.missionProgressBars && weeklyStats.missionProgressBars.length > 0 ? (
+                        weeklyStats.missionProgressBars.map((mp) => {
+                            const beforePercent = mp.totalTasks > 0 ? (mp.completedBeforeWeek / mp.totalTasks) * 100 : 0;
+                            const thisWeekPercent = mp.totalTasks > 0 ? (mp.completedThisWeek / mp.totalTasks) * 100 : 0;
+                            const isComplete = mp.remaining === 0 && mp.totalTasks > 0;
 
-                    {/* Recently Completed Submissions */}
-                    <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-                        <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span>Completed Tasks</span>
-                        </h4>
-
-                        {weeklyStats.completedTasks.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                                {weeklyStats.completedTasks.map(task => (
-                                    <div key={task.id} style={{
-                                        padding: '0.75rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        borderRadius: 'var(--radius-md)',
-                                        border: '1px solid rgba(255,255,255,0.05)',
+                            return (
+                                <div key={mp.missionId} style={{
+                                    padding: '0.85rem 1.25rem',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: isComplete ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                                    minHeight: '95px'
+                                }}>
+                                    {/* Mission Name */}
+                                    <div style={{
                                         display: 'flex',
+                                        justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        gap: '0.75rem'
+                                        marginBottom: '0.75rem'
                                     }}>
-                                        <div style={{ color: '#10b981' }}><CheckCircle size={18} /></div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'flex', gap: '0.75rem', marginTop: '0.1rem' }}>
-                                                {task.subtasks && task.subtasks.length > 0 && (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                        <ListChecks size={12} /> {task.subtasks.length} tasks
-                                                    </span>
-                                                )}
-                                                {task.completedAt && (
-                                                    <span>{new Date(task.completedAt).toLocaleDateString()}</span>
-                                                )}
-                                            </div>
+                                        <div style={{
+                                            fontWeight: 600,
+                                            fontSize: '1rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}>
+                                            {isComplete && (
+                                                <CheckCircle size={16} style={{ color: '#10b981' }} />
+                                            )}
+                                            {mp.missionName}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.8rem',
+                                            color: 'var(--color-text-muted)'
+                                        }}>
+                                            {mp.completedBeforeWeek + mp.completedThisWeek}/{mp.totalTasks}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: '0.9rem', padding: '1rem' }}>
-                                No completed submissions this week.
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Mission Progress */}
-                    <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}>
-                        <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            Mission Alignment
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                            {weeklyStats.missionProgress.map((mp, idx) => (
-                                <div key={idx}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
-                                        <span style={{ fontWeight: 500 }}>{mp.name}</span>
-                                        <span style={{ color: 'var(--color-text-muted)' }}>{Math.round((mp.completed / mp.total) * 100)}%</span>
+                                    {/* Progress Bar */}
+                                    <div style={{
+                                        height: '12px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(255,255,255,0.08)',
+                                        overflow: 'hidden',
+                                        display: 'flex'
+                                    }}>
+                                        {/* Before This Week - Muted Purple */}
+                                        {beforePercent > 0 && (
+                                            <div
+                                                style={{
+                                                    width: `${beforePercent}%`,
+                                                    height: '100%',
+                                                    background: 'linear-gradient(90deg, #7c3aed, #a855f7)',
+                                                    opacity: 0.6,
+                                                    transition: 'width 0.5s ease'
+                                                }}
+                                                title={`Before this week: ${mp.completedBeforeWeek} tasks`}
+                                            />
+                                        )}
+                                        {/* This Week - Bright Cyan/Teal */}
+                                        {thisWeekPercent > 0 && (
+                                            <div
+                                                style={{
+                                                    width: `${thisWeekPercent}%`,
+                                                    height: '100%',
+                                                    background: 'linear-gradient(90deg, #06b6d4, #22d3ee)',
+                                                    boxShadow: '0 0 12px rgba(34, 211, 238, 0.5)',
+                                                    transition: 'width 0.5s ease'
+                                                }}
+                                                title={`This week: ${mp.completedThisWeek} tasks`}
+                                            />
+                                        )}
+                                        {/* Remaining - Dark (already background color) */}
                                     </div>
-                                    <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                                        <div style={{
-                                            height: '100%',
-                                            width: `${(mp.completed / mp.total) * 100}%`,
-                                            background: idx % 2 === 0 ? '#6366f1' : '#ec4899',
-                                            borderRadius: '3px',
-                                            transition: 'width 0.5s ease-out'
-                                        }} />
+
+                                    {/* Legend */}
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '1rem',
+                                        marginTop: '0.4rem',
+                                        fontSize: '0.7rem',
+                                        color: 'var(--color-text-muted)'
+                                    }}>
+                                        {mp.completedBeforeWeek > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <div style={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '2px',
+                                                    background: 'linear-gradient(90deg, #7c3aed, #a855f7)',
+                                                    opacity: 0.6
+                                                }} />
+                                                <span>Previous ({mp.completedBeforeWeek})</span>
+                                            </div>
+                                        )}
+                                        {mp.completedThisWeek > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <div style={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '2px',
+                                                    background: 'linear-gradient(90deg, #06b6d4, #22d3ee)'
+                                                }} />
+                                                <span>This Week ({mp.completedThisWeek})</span>
+                                            </div>
+                                        )}
+                                        {mp.remaining > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <div style={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '2px',
+                                                    background: 'rgba(255,255,255,0.15)'
+                                                }} />
+                                                <span>Remaining ({mp.remaining})</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
-                            {weeklyStats.missionProgress.length === 0 && (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: '0.9rem', padding: '1rem' }}>
-                                    No linked activity found.
-                                </div>
-                            )}
+                            );
+                        })
+                    ) : (
+                        <div style={{
+                            padding: '3rem 2rem',
+                            textAlign: 'center',
+                            color: 'var(--color-text-muted)',
+                            fontStyle: 'italic',
+                            background: 'rgba(0,0,0,0.2)',
+                            borderRadius: 'var(--radius-md)'
+                        }}>
+                            No missions with linked tasks found.
                         </div>
-                    </div>
+                    )}
+
+
                 </div>
             </div>
         </div>

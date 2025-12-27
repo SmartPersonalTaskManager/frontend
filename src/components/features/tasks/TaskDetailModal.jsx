@@ -217,7 +217,6 @@ export default function TaskDetailModal({ task, onClose }) {
                                 <input
                                     ref={dateInputRef}
                                     type="date"
-                                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
                                     value={form.dueDate}
                                     onChange={e => setForm({ ...form, dueDate: e.target.value })}
                                     onClick={() => dateInputRef.current?.showPicker()}
