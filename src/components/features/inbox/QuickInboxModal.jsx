@@ -4,25 +4,20 @@ import useVoiceInput from '../../../hooks/useVoiceInput';
 import { Plus, Zap, Mic, Trash2, X } from 'lucide-react';
 
 export default function QuickInboxModal({ onClose, onCaptureSelect, excludeIds = [] }) {
-    const { tasks, addTask, deletePermanently } = useTasks();
+    const { tasks, addTask, updateTask, deletePermanently } = useTasks();
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
     const [quickInput, setQuickInput] = useState('');
     const inputRef = useRef(null);
 
-    // Get all inbox tasks (don't filter out converted ones, we'll style them differently)
+    // Get all inbox tasks
     const inboxTasks = tasks.filter(t =>
         !t.isArchived &&
         t.status !== 'done' &&
-        t.urge === undefined &&
-        t.imp === undefined &&
         t.isInbox === true
     );
 
     // Reverse to show newest first
     const sortedInboxTasks = [...inboxTasks].reverse();
-
-    // Check if a capture has been processed (converted to task)
-    const isProcessed = (taskId) => excludeIds.includes(taskId);
 
     const handleQuickAdd = (e) => {
         e.preventDefault();
@@ -160,55 +155,129 @@ export default function QuickInboxModal({ onClose, onCaptureSelect, excludeIds =
                             Inbox empty
                         </div>
                     ) : (
-                        sortedInboxTasks.map(task => {
-                            const processed = isProcessed(task.id);
-                            return (
-                                <div
-                                    key={task.id}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '0.75rem 1rem',
-                                        background: processed ? 'rgba(34, 197, 94, 0.05)' : 'rgba(255,255,255,0.03)',
-                                        borderRadius: 'var(--radius-md)',
-                                        borderLeft: processed ? '2px solid rgba(34, 197, 94, 0.6)' : '2px solid rgba(168, 85, 247, 0.4)',
-                                        cursor: processed ? 'default' : 'pointer',
-                                        opacity: processed ? 0.6 : 1,
-                                        transition: 'all 0.2s'
-                                    }}
-                                    className={processed ? '' : 'hover-bg-highlight'}
-                                    onClick={() => !processed && handleCaptureClick(task)}
-                                >
-                                    <span style={{
-                                        fontSize: '0.95rem',
-                                        flex: 1,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                        marginRight: '0.75rem',
-                                        textDecoration: processed ? 'line-through' : 'none',
-                                        color: processed ? 'var(--color-text-muted)' : 'inherit'
-                                    }}>
-                                        {task.title}
-                                    </span>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            deletePermanently(task.id);
-                                        }}
-                                        style={{ background: 'none', border: 'none', color: '#ef4444', opacity: processed ? 1 : 0.4, cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
-                                        onMouseLeave={(e) => e.currentTarget.style.opacity = processed ? 1 : 0.4}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            );
-                        })
+                        sortedInboxTasks.map(task => (
+                            <QuickInboxItem
+                                key={task.id}
+                                task={task}
+                                onSelect={() => handleCaptureClick(task)}
+                                onDelete={() => deletePermanently(task.id)}
+                                onUpdate={(newTitle) => updateTask(task.id, { title: newTitle })}
+                            />
+                        ))
                     )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+function QuickInboxItem({ task, onSelect, onDelete, onUpdate }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState(task.title);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isEditing]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (editValue.trim() && editValue.trim() !== task.title) {
+            onUpdate(editValue.trim());
+        } else {
+            setEditValue(task.title); // Reset if empty or unchanged
+        }
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            setEditValue(task.title);
+            setIsEditing(false);
+        }
+    };
+
+    if (isEditing) {
+        return (
+            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+                <input
+                    ref={inputRef}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={handleSubmit}
+                    onKeyDown={handleKeyDown}
+                    style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid rgba(99, 102, 241, 0.5)',
+                        background: 'rgba(0,0,0,0.3)',
+                        color: 'white',
+                        fontSize: '0.95rem',
+                        outline: 'none'
+                    }}
+                />
+            </form>
+        );
+    }
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem 1rem',
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: 'var(--radius-md)',
+                borderLeft: '2px solid rgba(168, 85, 247, 0.4)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                group: 'item'
+            }}
+            className="hover-bg-highlight group"
+            onClick={onSelect}
+        >
+            <span
+                style={{
+                    fontSize: '0.95rem',
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    marginRight: '0.75rem',
+                    color: 'inherit'
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                }}
+                title="Click to edit"
+            >
+                {task.title}
+            </span>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                }}
+                style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    opacity: 0.4,
+                    cursor: 'pointer',
+                    padding: '0.25rem',
+                    display: 'flex',
+                    transition: 'opacity 0.2s'
+                }}
+            // Hover effect is tricky in inline styles, usually would use CSS class or state
+            // But relying on parent hover or just native css class if available
+            >
+                <Trash2 size={14} />
+            </button>
         </div>
     );
 }
