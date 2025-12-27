@@ -539,7 +539,7 @@ export default function StatsView() {
                                     padding: '0.85rem 1.25rem',
                                     background: 'rgba(0,0,0,0.2)',
                                     borderRadius: 'var(--radius-md)',
-                                    border: isComplete ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
                                     minHeight: '95px',
                                     height: '120px'
                                 }}>
@@ -557,9 +557,6 @@ export default function StatsView() {
                                             alignItems: 'center',
                                             gap: '0.5rem'
                                         }}>
-                                            {isComplete && (
-                                                <CheckCircle size={16} style={{ color: '#10b981' }} />
-                                            )}
                                             {mp.missionName}
                                         </div>
                                         <div style={{

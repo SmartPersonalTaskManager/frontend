@@ -176,7 +176,7 @@ export default function WeeklyReview() {
                                     padding: '1rem 1.25rem',
                                     background: 'rgba(0,0,0,0.2)',
                                     borderRadius: 'var(--radius-md)',
-                                    border: isComplete ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                                    border: '1px solid rgba(255,255,255,0.05)'
                                 }}>
                                     {/* Mission Name */}
                                     <div style={{
@@ -192,9 +192,6 @@ export default function WeeklyReview() {
                                             alignItems: 'center',
                                             gap: '0.5rem'
                                         }}>
-                                            {isComplete && (
-                                                <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                                            )}
                                             {mission.text}
                                         </div>
                                         <div style={{

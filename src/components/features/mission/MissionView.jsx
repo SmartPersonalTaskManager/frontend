@@ -215,6 +215,7 @@ function MissionViewContent({
                     placeholder="Add a core value..."
                     emptyMessage="What principles guide you?"
                     accentColor="rgba(239, 68, 68, 0.1)"
+                    itemBorderColor="#ef4444"
                 />
             </section>
 
@@ -308,7 +309,7 @@ function MissionViewContent({
     );
 }
 
-function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, placeholder, emptyMessage, accentColor = 'rgba(255,255,255,0.05)', scrollRef }) {
+function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, placeholder, emptyMessage, accentColor = 'rgba(255,255,255,0.05)', itemBorderColor, scrollRef }) {
     const [isAdding, setIsAdding] = useState(false);
     const [newItemText, setNewItemText] = useState('');
     const bottomRef = useRef(null);
@@ -400,7 +401,7 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
                 )}
 
                 {items.map(item => (
-                    <ListItem key={item.id} item={item} onUpdate={onUpdate} onDelete={onDelete} />
+                    <ListItem key={item.id} item={item} onUpdate={onUpdate} onDelete={onDelete} borderColor={itemBorderColor} />
                 ))}
 
                 {isAdding && (
@@ -426,7 +427,7 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
     );
 }
 
-function ListItem({ item, onUpdate, onDelete }) {
+function ListItem({ item, onUpdate, onDelete, borderColor }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [text, setText] = useState(item.text);
@@ -472,7 +473,8 @@ function ListItem({ item, onUpdate, onDelete }) {
                     background: 'rgba(255,255,255,0.03)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '1.05rem',
-                    letterSpacing: '0.01em'
+                    letterSpacing: '0.01em',
+                    borderLeft: borderColor ? `4px solid ${borderColor}` : 'none'
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}

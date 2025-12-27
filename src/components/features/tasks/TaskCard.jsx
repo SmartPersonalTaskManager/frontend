@@ -153,7 +153,7 @@ export default function TaskCard({ task, onClick, compact = false }) {
                                 ) : (
                                     <Clock size={12} style={{ opacity: 1 }} />
                                 )}
-                                {new Date(task.dueDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                {task.dueDate.split('T')[0].split('-').reverse().join('.')}
                             </span>
                         </div>
                     )}

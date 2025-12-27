@@ -223,24 +223,54 @@ export default function TaskDetailModal({ task, onClose }) {
                                 <Calendar size={14} /> Due Date
                             </label>
                             {editMode ? (
-                                <input
-                                    ref={dateInputRef}
-                                    type="date"
-                                    value={form.dueDate}
-                                    onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                                    onClick={() => dateInputRef.current?.showPicker()}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.5rem',
-                                        borderRadius: 'var(--radius-sm)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        background: 'rgba(0,0,0,0.2)',
-                                        color: 'white',
-                                        cursor: 'pointer'
-                                    }}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        ref={dateInputRef}
+                                        type="date"
+                                        value={form.dueDate}
+                                        onChange={e => setForm({ ...form, dueDate: e.target.value })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            opacity: 0,
+                                            cursor: 'pointer',
+                                            zIndex: 10
+                                        }}
+                                        onClick={(e) => {
+                                            // Ensure picker opens on click, though some browsers handle opacity:0 input clicks automatically
+                                            try {
+                                                e.target.showPicker();
+                                            } catch (err) {
+                                                console.log("Browser doesn't support showPicker, relying on default behavior");
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.6rem 0.75rem',
+                                            minHeight: '42px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            background: 'rgba(0,0,0,0.2)',
+                                            color: 'white',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        {/* Display Formatted Date */}
+                                        {form.dueDate ? form.dueDate.split('T')[0].split('-').reverse().join('.') : 'dd.mm.yyyy'}
+                                        <Calendar size={16} style={{ opacity: 0.7 }} />
+                                    </button>
+                                </div>
                             ) : (
-                                <span style={{ fontSize: '0.9rem' }}>{form.dueDate || 'Not set'}</span>
+                                <span style={{ fontSize: '0.9rem' }}>{form.dueDate ? form.dueDate.split('T')[0].split('-').reverse().join('.') : 'Not set'}</span>
                             )}
                         </div>
                         <div>
@@ -324,37 +354,7 @@ export default function TaskDetailModal({ task, onClose }) {
                         </div>
                     </div>
 
-                    {/* Description */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem', display: 'block' }}>
-                            Description
-                        </label>
-                        {editMode ? (
-                            <textarea
-                                value={form.description}
-                                onChange={e => setForm({ ...form, description: e.target.value })}
-                                placeholder="Add notes or details..."
-                                style={{
-                                    width: '100%',
-                                    minHeight: '80px',
-                                    padding: '0.75rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    background: 'rgba(0,0,0,0.2)',
-                                    color: 'white',
-                                    resize: 'vertical'
-                                }}
-                            />
-                        ) : (
-                            <p style={{
-                                fontSize: '0.9rem',
-                                color: form.description ? 'var(--color-text-main)' : 'var(--color-text-muted)',
-                                fontStyle: form.description ? 'normal' : 'italic'
-                            }}>
-                                {form.description || 'No description'}
-                            </p>
-                        )}
-                    </div>
+
 
                     {/* Subtasks / Checklist */}
                     <div>
@@ -362,16 +362,16 @@ export default function TaskDetailModal({ task, onClose }) {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            marginBottom: '1rem'
+                            marginBottom: '0.7rem'
                         }}>
                             <label style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                fontSize: '0.9rem',
-                                fontWeight: 600
+                                fontSize: '0.8rem',
+                                color: 'var(--color-text-muted)'
                             }}>
-                                <ListChecks size={16} style={{ color: 'var(--color-primary)' }} />
+                                <ListChecks size={14} />
                                 Checklist
                             </label>
                             {subtasksTotal > 0 && (
@@ -402,7 +402,7 @@ export default function TaskDetailModal({ task, onClose }) {
                         </div>
 
                         {/* Subtask List */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: subtasksTotal > 0 ? '1rem' : '0' }}>
                             {form.subtasks.map(subtask => (
                                 <div
                                     key={subtask.id}
@@ -499,7 +499,7 @@ export default function TaskDetailModal({ task, onClose }) {
                     alignItems: 'center'
                 }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                        Created: {new Date(task.createdAt).toLocaleDateString()}
+                        Created: {new Date(task.createdAt).toLocaleDateString('tr-TR')}
                     </span>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                         {showDeleteConfirm ? (
@@ -537,18 +537,27 @@ export default function TaskDetailModal({ task, onClose }) {
                         ) : (
                             <>
                                 <button
-                                    onClick={() => { deleteTask(task.id); onClose(); }}
+                                    onClick={() => {
+                                        if (task.status === 'done') {
+                                            deleteTask(task.id);
+                                            onClose();
+                                        }
+                                    }}
                                     className="btn"
+                                    disabled={task.status !== 'done'}
+                                    title={task.status !== 'done' ? "Only completed tasks can be archived" : "Archive"}
                                     style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        background: task.status === 'done' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                                         border: 'none',
-                                        color: 'var(--color-text-muted)',
+                                        color: task.status === 'done' ? '#10b981' : 'var(--color-text-muted)',
                                         padding: '0.5rem 1rem',
                                         fontSize: '0.85rem',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '0.5rem',
-                                        borderRadius: 'var(--radius-sm)'
+                                        borderRadius: 'var(--radius-sm)',
+                                        opacity: task.status === 'done' ? 1 : 0.5,
+                                        cursor: task.status === 'done' ? 'pointer' : 'not-allowed'
                                     }}
                                 >
                                     <Archive size={16} /> Archive

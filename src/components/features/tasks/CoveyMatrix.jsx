@@ -5,7 +5,7 @@ import TaskCard from './TaskCard';
 import TaskDetailModal from './TaskDetailModal';
 import QuickInboxModal from '../inbox/QuickInboxModal';
 import ContextManagerModal from './ContextManagerModal';
-import { Plus, X, LayoutGrid, List, Zap, Filter, Mic, Settings, Target, ChevronDown, Link2, CornerDownRight, Flame, Star } from 'lucide-react';
+import { Plus, X, LayoutGrid, List, Zap, Filter, Mic, Settings, Target, ChevronDown, Link2, CornerDownRight, Flame, Star, Calendar } from 'lucide-react';
 import useVoiceInput from '../../../hooks/useVoiceInput';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -135,7 +135,7 @@ export default function CoveyMatrix() {
                                 fontSize: '0.95rem',
                                 lineHeight: '1.5',
                                 minWidth: '140px',
-                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                                boxShadow: 'none',
                                 justifyContent: 'center'
                             }}
                         >
@@ -260,7 +260,7 @@ export default function CoveyMatrix() {
                             style={{
                                 padding: '0.6rem 1.25rem 0.6rem 1.25rem',
                                 fontSize: '0.95rem',
-                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                                boxShadow: 'none',
                                 border: '1px solid transparent',
                                 lineHeight: '1.5',
                                 display: 'flex',
@@ -287,7 +287,7 @@ export default function CoveyMatrix() {
                         style={{
                             padding: '0.6rem 1.25rem 0.6rem 1.25rem',
                             fontSize: '0.95rem',
-                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                            boxShadow: 'none',
                             border: '1px solid transparent',
                             lineHeight: '1.5',
                             display: 'flex',
@@ -568,7 +568,7 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <label style={{ flex: 1, padding: '0.6rem', border: `1px solid ${form.urge ? 'var(--color-danger)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center', background: form.urge ? 'rgba(239, 68, 68, 0.1)' : 'transparent', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                             <input type="checkbox" checked={form.urge} onChange={e => setForm({ ...form, urge: e.target.checked })} style={{ display: 'none' }} />
-                            Urgent <Flame size={16} fill={form.urge ? "currentColor" : "none"} />
+                            Urgent <Flame size={18} fill={form.urge ? "currentColor" : "none"} />
                         </label>
                         <label style={{ flex: 1, padding: '0.6rem', border: `1px solid ${form.imp ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center', background: form.imp ? 'rgba(99, 102, 241, 0.1)' : 'transparent', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                             <input type="checkbox" checked={form.imp} onChange={e => setForm({ ...form, imp: e.target.checked })} style={{ display: 'none' }} />
@@ -661,14 +661,54 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Due Date</label>
-                            <input
-                                ref={dateRef}
-                                type="date"
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', cursor: 'pointer' }}
-                                value={form.dueDate}
-                                onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                                onClick={() => dateRef.current?.showPicker()}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    ref={dateRef}
+                                    type="date"
+                                    style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        opacity: 0,
+                                        cursor: 'pointer',
+                                        zIndex: 10,
+                                        background: 'transparent',
+                                        border: 'none',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none'
+                                    }}
+                                    value={form.dueDate}
+                                    onChange={e => setForm({ ...form, dueDate: e.target.value })}
+                                    onClick={(e) => {
+                                        try {
+                                            e.target.showPicker();
+                                        } catch (err) {
+                                            console.log("Browser doesn't support showPicker");
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.6rem 0.75rem',
+                                        minHeight: '42px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        color: 'white',
+                                        textAlign: 'left',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    }}
+                                >
+                                    {/* Display Formatted Date */}
+                                    {form.dueDate ? form.dueDate.split('T')[0].split('-').reverse().join('.') : 'dd.mm.yyyy'}
+                                    <Calendar size={16} style={{ opacity: 0.7 }} />
+                                </button>
+                            </div>
                         </div>
                         <div style={{ position: 'relative' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Context</label>
