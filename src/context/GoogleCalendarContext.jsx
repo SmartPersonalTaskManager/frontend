@@ -1,4 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from "react";
+import { api } from "../services/api";
 
 export const GoogleCalendarContext = createContext();
 
@@ -267,55 +268,33 @@ export function GoogleCalendarProvider({ children }) {
     [isAuthenticated]
   );
 
-  // Create event on Google Calendar
-  const createCalendarEvent = useCallback(
-    async (event) => {
-      if (!isAuthenticated) {
-        setError("Not authenticated with Google Calendar");
-        return null;
-      }
+  // Push Task to Google Calendar (via Backend)
+  const createCalendarEvent = useCallback(async (eventData) => {
+    if (!isAuthenticated) {
+      setError("Not authenticated with Google Calendar");
+      return null;
+    }
 
-      setIsLoading(true);
-      try {
-        const response = await window.gapi.client.calendar.events.insert({
-          calendarId: "primary",
-          resource: {
-            summary: event.title,
-            description: event.description || "",
-            start: {
-              dateTime: event.startTime || new Date().toISOString(),
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            end: {
-              dateTime:
-                event.endTime ||
-                new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            location: event.location || "",
-            extendedProperties: {
-              private: {
-                missionId: event.missionId || "",
-                taskId: event.taskId || "",
-                context: event.context || "",
-              },
-            },
-          },
-        });
+    // We only support pushing existing tasks by ID now
+    if (!eventData.taskId) {
+      console.warn("Cannot push event without Task ID");
+      return null;
+    }
 
-        setError(null);
-        // Refresh events after creating
-        await fetchCalendarEvents();
-        return response.result;
-      } catch (err) {
-        setError(`Failed to create calendar event: ${err.message}`);
-        console.error("Create event error:", err);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [isAuthenticated, fetchCalendarEvents]
+    setIsLoading(true);
+    try {
+      await api.post("/calendar/push-task", { taskId: eventData.taskId });
+      setError(null);
+      return true;
+    } catch (err) {
+      setError(`Failed to create calendar event: ${err.message}`);
+      console.error("Create event error:", err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  },
+    [isAuthenticated]
   );
 
   // Update event on Google Calendar
