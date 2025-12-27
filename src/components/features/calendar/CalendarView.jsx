@@ -16,6 +16,7 @@ export default function CalendarView({ initialDate }) {
   }, [initialDate]);
 
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedDayList, setSelectedDayList] = useState(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
 
   const todayRef = useRef(null);
@@ -27,6 +28,12 @@ export default function CalendarView({ initialDate }) {
     } else if (calendarGridRef.current) {
       calendarGridRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  };
+
+  const handleDayClick = (day) => {
+    if (!day) return;
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDayList(targetDate);
   };
 
   const daysInMonth = new Date(
@@ -266,8 +273,10 @@ export default function CalendarView({ initialDate }) {
                   overflow: "hidden",
                   background: isToday
                     ? "rgba(99, 102, 241, 0.03)" // Subtle highlight for entire today cell
-                    : "transparent"
+                    : "transparent",
+                  cursor: day ? "pointer" : "default",
                 }}
+                onClick={() => day && handleDayClick(day)}
               >
                 {day && (
                   <>
@@ -275,7 +284,7 @@ export default function CalendarView({ initialDate }) {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'flex-start',
-                      marginBottom: '0.5rem',
+                      marginBottom: '0.25rem',
                       flexShrink: 0,
                     }}>
                       <span
@@ -283,8 +292,9 @@ export default function CalendarView({ initialDate }) {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: '28px',
-                          height: '28px',
+                          width: '26px',
+                          height: '26px',
+                          fontSize: '0.85rem',
                           borderRadius: '50%',
                           background:
                             day === new Date().getDate() &&
@@ -317,7 +327,7 @@ export default function CalendarView({ initialDate }) {
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: "0.25rem",
+                        gap: "0.15rem",
                         flex: 1,
                         overflowY: "auto",
                         overflowX: "hidden",
@@ -328,11 +338,14 @@ export default function CalendarView({ initialDate }) {
                       {getTasksForDate(day).map((task) => (
                         <div
                           key={task.id}
-                          onClick={() => setSelectedTask(task)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTask(task);
+                          }}
                           className="calendar-task-item"
                           style={{
                             fontSize: "0.7rem",
-                            padding: "0.2rem 0.4rem",
+                            padding: "0.15rem 0.35rem",
                             background:
                               task.status === "done"
                                 ? "rgba(255,255,255,0.05)"
@@ -357,7 +370,8 @@ export default function CalendarView({ initialDate }) {
                       ))}
                     </div>
                   </>
-                )}
+                )
+                }
               </div>
             );
           })}
@@ -685,60 +699,222 @@ export default function CalendarView({ initialDate }) {
         )
       }
       {/* Sync Modal */}
-      {showSyncModal && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            animation: "fadeIn 0.2s ease",
-          }}
-          onClick={() => setShowSyncModal(false)}
-        >
+      {
+        showSyncModal && (
           <div
-            className="glass-panel"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%",
-              maxWidth: "420px",
-              borderRadius: "var(--radius-lg)",
-              padding: "1.5rem",
-              animation: "scaleIn 0.2s ease",
-              position: "relative"
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              animation: "fadeIn 0.2s ease",
             }}
+            onClick={() => setShowSyncModal(false)}
           >
-            <button
-              onClick={() => setShowSyncModal(false)}
+            <div
+              className="glass-panel"
+              onClick={(e) => e.stopPropagation()}
               style={{
-                position: "absolute",
-                top: "1rem",
-                right: "1rem",
-                background: "transparent",
-                border: "none",
-                color: "var(--color-text-muted)",
-                cursor: "pointer",
-                padding: "0.25rem",
+                width: "100%",
+                maxWidth: "420px",
+                borderRadius: "var(--radius-lg)",
+                padding: "1.5rem",
+                animation: "scaleIn 0.2s ease",
+                position: "relative"
               }}
             >
-              <X size={20} />
-            </button>
+              <button
+                onClick={() => setShowSyncModal(false)}
+                style={{
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--color-text-muted)",
+                  cursor: "pointer",
+                  padding: "0.25rem",
+                }}
+              >
+                <X size={20} />
+              </button>
 
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "1.1rem", borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-              Google Calendar Sync
-            </h3>
+              <h3 style={{ marginTop: 0, marginBottom: "1.5rem", fontSize: "1.1rem", borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                Google Calendar Sync
+              </h3>
 
-            <GoogleCalendarSync />
+              <GoogleCalendarSync />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+
+      {/* Day List Modal */}
+      {
+        selectedDayList && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              animation: "fadeIn 0.2s ease",
+            }}
+            onClick={() => setSelectedDayList(null)}
+          >
+            <div
+              className="glass-panel"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+                maxHeight: "80vh",
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: "var(--radius-lg)",
+                padding: "1.5rem",
+                animation: "scaleIn 0.2s ease",
+              }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                paddingBottom: "0.5rem"
+              }}>
+                <h4 style={{
+                  margin: 0,
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  color: "var(--color-text-main)",
+                }}>
+                  {selectedDayList.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </h4>
+                <button
+                  onClick={() => setSelectedDayList(null)}
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "28px",
+                    height: "28px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "var(--color-text-muted)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem", paddingRight: "0.5rem" }}>
+                {(() => {
+                  // Filter tasks for this specific date
+                  const targetYear = selectedDayList.getFullYear();
+                  const targetMonth = selectedDayList.getMonth();
+                  const targetDay = selectedDayList.getDate();
+
+                  const daysTasks = tasks.filter((t) => {
+                    if (!t.dueDate) return false;
+                    // Included archived tasks here? User didn't specify, but calendar view usually filters them. 
+                    // Let's match the calendar view logic: "isArchived" check.
+                    if (t.isArchived) return false;
+
+                    const taskDate = new Date(t.dueDate);
+                    if (isNaN(taskDate.getTime())) return false;
+
+                    return (
+                      taskDate.getDate() === targetDay &&
+                      taskDate.getMonth() === targetMonth &&
+                      taskDate.getFullYear() === targetYear
+                    );
+                  });
+
+                  if (daysTasks.length === 0) {
+                    return (
+                      <div style={{ textAlign: "center", color: "var(--color-text-muted)", padding: "1rem" }}>
+                        No tasks for this day.
+                      </div>
+                    );
+                  }
+
+                  return daysTasks.map(task => (
+                    <div
+                      key={task.id}
+                      onClick={() => {
+                        setSelectedDayList(null); // Close this modal
+                        setSelectedTask(task);    // Open task detail
+                      }}
+                      style={{
+                        padding: "0.75rem",
+                        background: "rgba(255,255,255,0.03)",
+                        borderRadius: "var(--radius-md)",
+                        border: "1px solid rgba(255,255,255,0.05)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        transition: "all 0.2s ease"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                      }}
+                    >
+                      <div style={{
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                        border: task.status === 'done' ? "none" : "2px solid rgba(255,255,255,0.3)",
+                        background: task.status === 'done' ? "var(--color-success)" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0
+                      }}>
+                        {task.status === 'done' && <CheckCircle size={10} color="white" />}
+                      </div>
+                      <span style={{
+                        flex: 1,
+                        fontSize: "0.9rem",
+                        color: task.status === 'done' ? "var(--color-text-muted)" : "var(--color-text-main)",
+                        textDecoration: task.status === 'done' ? "line-through" : "none"
+                      }}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }
