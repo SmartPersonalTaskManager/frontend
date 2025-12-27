@@ -160,3 +160,169 @@ export const DEMO_DATA = {
         { title: "Schedule dentist appointment", urge: true, imp: false, context: "@phone", dueDate: 1 }
     ]
 };
+
+// TEST DEMO DATA - Systematic naming for easy testing and debugging
+export const TEST_DEMO_DATA = {
+    // 1. Core Values (3 items - same count as regular demo)
+    values: [
+        { text: "VALUE-1" },
+        { text: "VALUE-2" },
+        { text: "VALUE-3" }
+    ],
+
+    // 2. Personal Missions (5 items) -> Submissions (2-3 each) -> Tasks (4-5 per submission)
+    // Naming: MISSION-X, SUBMISSION-X.Y, TASK-X.Y.Z
+    // STRICT RULE: Tasks must belong to Submissions, never directly to Missions.
+    missions: [
+        {
+            text: "MISSION-1",
+            submissions: [
+                {
+                    title: "SUBMISSION-1.1",
+                    // ALL COMPLETED - For Insights demo ✓
+                    allCompleted: true,
+                    tasks: [
+                        { title: "TASK-1.1.1", urge: false, imp: true, context: "@home", dueDate: -3, status: 'done' },
+                        { title: "TASK-1.1.2", urge: true, imp: true, context: "@work", dueDate: -5, status: 'done' },
+                        { title: "TASK-1.1.3", urge: false, imp: true, context: "@computer", dueDate: -2, status: 'done' },
+                        { title: "TASK-1.1.4", urge: false, imp: false, context: "@computer", dueDate: -1, status: 'done' }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-1.2",
+                    tasks: [
+                        { title: "TASK-1.2.1", urge: true, imp: true, context: "@work", dueDate: 0, status: 'done' },
+                        { title: "TASK-1.2.2", urge: false, imp: false, context: "@computer", dueDate: 7 },
+                        { title: "TASK-1.2.3", urge: false, imp: true, context: "@computer", dueDate: 4 },
+                        { title: "TASK-1.2.4", urge: true, imp: false, context: "@work", dueDate: 1, status: 'done' },
+                        { title: "TASK-1.2.5", urge: false, imp: false, context: "@computer", dueDate: 6 }
+                    ]
+                }
+            ]
+        },
+        {
+            text: "MISSION-2",
+            submissions: [
+                {
+                    title: "SUBMISSION-2.1",
+                    tasks: [
+                        { title: "TASK-2.1.1", urge: true, imp: true, context: "@anywhere", dueDate: 0, status: 'done' },
+                        { title: "TASK-2.1.2", urge: false, imp: false, context: "@errands", dueDate: 5 },
+                        { title: "TASK-2.1.3", urge: false, imp: true, context: "@computer", dueDate: 3, status: 'done' },
+                        { title: "TASK-2.1.4", urge: true, imp: true, context: "@phone", dueDate: 2 }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-2.2",
+                    // ALL COMPLETED - For Insights demo ✓
+                    allCompleted: true,
+                    tasks: [
+                        { title: "TASK-2.2.1", urge: true, imp: false, context: "@errands", dueDate: -4, status: 'done', isArchived: true },
+                        { title: "TASK-2.2.2", urge: false, imp: true, context: "@home", dueDate: -3, status: 'done' },
+                        { title: "TASK-2.2.3", urge: false, imp: false, context: "@computer", dueDate: -2, status: 'done' },
+                        { title: "TASK-2.2.4", urge: false, imp: false, context: "@home", dueDate: -5, status: 'done', isArchived: true },
+                        { title: "TASK-2.2.5", urge: true, imp: true, context: "@phone", dueDate: -1, status: 'done' }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-2.3",
+                    // ALL COMPLETED - For Insights demo ✓
+                    allCompleted: true,
+                    tasks: [
+                        { title: "TASK-2.3.1", urge: true, imp: true, context: "@phone", dueDate: 0, status: 'done' },
+                        { title: "TASK-2.3.2", urge: false, imp: true, context: "@errands", dueDate: -2, status: 'done' },
+                        { title: "TASK-2.3.3", urge: true, imp: true, context: "@home", dueDate: -1, status: 'done' },
+                        { title: "TASK-2.3.4", urge: false, imp: false, context: "@phone", dueDate: -3, status: 'done' }
+                    ]
+                }
+            ]
+        },
+        {
+            text: "MISSION-3",
+            submissions: [
+                {
+                    title: "SUBMISSION-3.1",
+                    tasks: [
+                        { title: "TASK-3.1.1", urge: true, imp: true, context: "@phone", dueDate: -2, status: 'done' },
+                        { title: "TASK-3.1.2", urge: false, imp: true, context: "@computer", dueDate: 3 },
+                        { title: "TASK-3.1.3", urge: false, imp: false, context: "@computer", dueDate: 5 },
+                        { title: "TASK-3.1.4", urge: false, imp: true, context: "@computer", dueDate: 4, status: 'done' }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-3.2",
+                    tasks: [
+                        { title: "TASK-3.2.1", urge: false, imp: true, context: "@computer", dueDate: 5 },
+                        { title: "TASK-3.2.2", urge: false, imp: true, context: "@home", dueDate: 14 },
+                        { title: "TASK-3.2.3", urge: true, imp: true, context: "@computer", dueDate: -1, status: 'done', isArchived: true },
+                        { title: "TASK-3.2.4", urge: false, imp: true, context: "@computer", dueDate: 3 },
+                        { title: "TASK-3.2.5", urge: true, imp: false, context: "@work", dueDate: 1 }
+                    ]
+                }
+            ]
+        },
+        {
+            text: "MISSION-4",
+            submissions: [
+                {
+                    title: "SUBMISSION-4.1",
+                    tasks: [
+                        { title: "TASK-4.1.1", urge: false, imp: true, context: "@phone", dueDate: 0 },
+                        { title: "TASK-4.1.2", urge: true, imp: true, context: "@home", dueDate: 3, status: 'done' },
+                        { title: "TASK-4.1.3", urge: true, imp: false, context: "@errands", dueDate: 2 },
+                        { title: "TASK-4.1.4", urge: false, imp: false, context: "@computer", dueDate: 7 }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-4.2",
+                    tasks: [
+                        { title: "TASK-4.2.1", urge: false, imp: true, context: "@phone", dueDate: 4 },
+                        { title: "TASK-4.2.2", urge: true, imp: false, context: "@phone", dueDate: 0, status: 'done' },
+                        { title: "TASK-4.2.3", urge: false, imp: true, context: "@home", dueDate: 6 },
+                        { title: "TASK-4.2.4", urge: true, imp: true, context: "@errands", dueDate: 1 },
+                        { title: "TASK-4.2.5", urge: false, imp: true, context: "@phone", dueDate: 5 }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-4.3",
+                    tasks: [
+                        { title: "TASK-4.3.1", urge: false, imp: false, context: "@computer", dueDate: 7 },
+                        { title: "TASK-4.3.2", urge: true, imp: true, context: "@anywhere", dueDate: 5 },
+                        { title: "TASK-4.3.3", urge: true, imp: true, context: "@computer", dueDate: 2 },
+                        { title: "TASK-4.3.4", urge: false, imp: true, context: "@computer", dueDate: 4 }
+                    ]
+                }
+            ]
+        },
+        {
+            text: "MISSION-5",
+            submissions: [
+                {
+                    title: "SUBMISSION-5.1",
+                    tasks: [
+                        { title: "TASK-5.1.1", urge: true, imp: false, context: "@phone", dueDate: 0, status: 'done' },
+                        { title: "TASK-5.1.2", urge: false, imp: false, context: "@home", dueDate: 3 },
+                        { title: "TASK-5.1.3", urge: true, imp: true, context: "@home", dueDate: 0 },
+                        { title: "TASK-5.1.4", urge: false, imp: true, context: "@computer", dueDate: 7 },
+                        { title: "TASK-5.1.5", urge: false, imp: false, context: "@computer", dueDate: 4 }
+                    ]
+                },
+                {
+                    title: "SUBMISSION-5.2",
+                    tasks: [
+                        { title: "TASK-5.2.1", urge: true, imp: true, context: "@home", dueDate: 0 },
+                        { title: "TASK-5.2.2", urge: false, imp: false, context: "@phone", dueDate: -3, status: 'done' },
+                        { title: "TASK-5.2.3", urge: false, imp: true, context: "@home", dueDate: 5 },
+                        { title: "TASK-5.2.4", urge: false, imp: false, context: "@anywhere", dueDate: 7 }
+                    ]
+                }
+            ]
+        }
+    ],
+
+    // 3. Loose Tasks (Not linked to any mission)
+    tasks: [
+        { title: "LOOSE-TASK-1", urge: true, imp: true, context: "@computer", dueDate: -1, status: 'done' },
+        { title: "LOOSE-TASK-2", urge: true, imp: false, context: "@phone", dueDate: 1 }
+    ]
+};

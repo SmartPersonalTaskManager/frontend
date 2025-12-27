@@ -113,57 +113,7 @@ export default function CoveyMatrix() {
                     {/* View Toggle & Context Filter Group */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
 
-                        {/* View Toggle - Pill Style */}
-                        <div style={{
-                            background: '#0f172a',
-                            padding: '0.2rem',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            gap: '2px'
-                        }}>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                style={{
-                                    background: viewMode === 'list' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                                    color: 'white',
-                                    opacity: viewMode === 'list' ? 1 : 0.5,
-                                    border: 'none',
-                                    padding: '0.4rem 0.6rem',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                title="List View"
-                            >
-                                <List size={16} strokeWidth={viewMode === 'list' ? 2.5 : 2} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                style={{
-                                    background: viewMode === 'grid' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                                    color: 'white',
-                                    opacity: viewMode === 'grid' ? 1 : 0.5,
-                                    border: 'none',
-                                    padding: '0.4rem 0.6rem',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                title="Card View"
-                            >
-                                <LayoutGrid size={16} strokeWidth={viewMode === 'grid' ? 2.5 : 2} />
-                            </button>
-                        </div>
 
-                        {/* Divider */}
-                        <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }}></div>
 
                         {/* Context Filter - Custom Dropdown */}
                         <div style={{ position: 'relative' }}>

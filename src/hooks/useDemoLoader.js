@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTasks } from '../context/TaskContext';
 import { useMission } from '../context/MissionContext';
-import { DEMO_DATA } from '../utils/demoData';
+import { DEMO_DATA, TEST_DEMO_DATA } from '../utils/demoData';
 
 export function useDemoLoader() {
     const { addTask, tasks, deletePermanently, updateTask } = useTasks();
@@ -150,8 +150,11 @@ export function useDemoLoader() {
         }
     }, []);
 
-    const loadDemoData = useCallback(async () => {
-        console.log('🚀 Starting demo data load...');
+    const loadDemoData = useCallback(async (dataType = 'realistic') => {
+        const dataSource = dataType === 'test' ? TEST_DEMO_DATA : DEMO_DATA;
+        const dataLabel = dataType === 'test' ? 'TEST Demo Data' : 'Realistic Demo Data';
+
+        console.log(`🚀 Starting ${dataLabel} load...`);
         setIsLoading(true);
 
         try {
@@ -163,16 +166,16 @@ export function useDemoLoader() {
 
             // 1. Add Values in parallel
             console.log('📌 Loading values...');
-            if (DEMO_DATA.values) {
-                const valuePromises = DEMO_DATA.values.map(v => addValue(v.text));
+            if (dataSource.values) {
+                const valuePromises = dataSource.values.map(v => addValue(v.text));
                 await Promise.all(valuePromises);
             }
             console.log('✅ Values loaded');
 
             // 2. Add Missions, Submissions & Linked Tasks
             console.log('📌 Loading missions tree...');
-            if (DEMO_DATA.missions) {
-                for (const m of DEMO_DATA.missions) {
+            if (dataSource.missions) {
+                for (const m of dataSource.missions) {
                     console.log('  Adding mission:', m.text);
                     const rootMission = await addMission(m.text);
 
@@ -196,8 +199,8 @@ export function useDemoLoader() {
 
             // 3. Add Loose Tasks
             console.log('📌 Loading loose tasks...');
-            if (DEMO_DATA.tasks) {
-                for (const t of DEMO_DATA.tasks) {
+            if (dataSource.tasks) {
+                for (const t of dataSource.tasks) {
                     await createTaskWithStatus(t, null);
                 }
             }
@@ -205,7 +208,7 @@ export function useDemoLoader() {
 
             // Mark as done
             localStorage.setItem("sptm_has_loaded_demo", "true");
-            console.log('✅ Demo data load complete!');
+            console.log(`✅ ${dataLabel} load complete!`);
             console.log('📊 Summary:');
             console.log('   - 3 Core Values');
             console.log('   - 5 Personal Missions');

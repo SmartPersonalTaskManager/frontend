@@ -55,7 +55,7 @@ export default function MissionWidget({ collapsed }) {
                     <span style={{ fontSize: '0.85rem', color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: '0.5rem', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
                         {values.length > 0
                             ? (values[valueIndex]?.text.length > 100 ? values[valueIndex]?.text.substring(0, 100) + '...' : values[valueIndex]?.text)
-                            : "Define your core values"}
+                            : "Define your value"}
                     </span>
                 </div>
             </div>
@@ -77,7 +77,7 @@ export default function MissionWidget({ collapsed }) {
             />
             <CarouselCard
                 title="VALUE"
-                content={values.length > 0 ? values[valueIndex]?.text : "Define your core values"}
+                content={values.length > 0 ? values[valueIndex]?.text : "Define your value"}
                 onNext={nextValue}
                 onPrev={prevValue}
                 hasData={values.length > 0}

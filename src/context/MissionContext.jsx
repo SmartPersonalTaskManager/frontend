@@ -107,8 +107,12 @@ export function MissionProvider({ children }) {
                 const newSub = await api.post(`/missions/${realParentId}/submissions`, payload);
 
                 // Optimistic update - add to state without re-fetch
+                // CRITICAL: Must include id, realId, and type for proper task linking
                 const formattedSub = {
                     ...newSub,
+                    id: `submission-${newSub.id}`,
+                    realId: newSub.id,
+                    type: 'submission',
                     text: newSub.title || text,
                     parentId: parentId
                 };
@@ -118,8 +122,12 @@ export function MissionProvider({ children }) {
                 const newMission = await api.post(`/missions?userId=${userId}`, text);
 
                 // Optimistic update - add to state without re-fetch
+                // CRITICAL: Must include id, realId, and type for consistency
                 const formattedMission = {
                     ...newMission,
+                    id: `mission-${newMission.id}`,
+                    realId: newMission.id,
+                    type: 'mission',
                     text: cleanString(newMission.content || text),
                     parentId: null
                 };
