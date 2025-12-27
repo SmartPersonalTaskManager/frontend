@@ -167,7 +167,7 @@ export default function StatsView() {
                     {/* Recently Completed Submissions */}
                     <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', minHeight: '320px' }}>
                         <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span>Completed Submissions</span>
+                            <span>Completed Tasks</span>
                         </h4>
 
                         {weeklyStats.completedTasks.length > 0 ? (
@@ -373,14 +373,14 @@ export default function StatsView() {
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: '#10b981' }} />
                             <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Completed</div>
                             <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#fff' }}>{filteredStats.completed}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.25rem' }}>Submissions Done</div>
+                            <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.25rem' }}>Tasks Done</div>
                         </div>
 
                         <div style={{ position: 'relative', overflow: 'hidden', padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'center', background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(255,255,255,0.05)', height: '150px' }}>
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: '#f59e0b' }} />
                             <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>In Progress</div>
                             <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#fff' }}>{filteredStats.inProgress}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>Active Submissions</div>
+                            <div style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>Active Tasks</div>
                         </div>
                     </div>
 
@@ -394,7 +394,7 @@ export default function StatsView() {
                             <div style={{ height: '100%', width: `${filteredStats.rate}%`, background: 'linear-gradient(90deg, #6366f1, #a855f7)' }} />
                         </div>
                         <div style={{ fontSize: '1.05rem', color: 'var(--color-text-muted)', marginTop: '0.75rem', textAlign: 'right' }}>
-                            {filteredStats.completed} / {filteredStats.total} Total Submissions
+                            {filteredStats.completed} / {filteredStats.total} Total Tasks
                         </div>
                     </div>
                 </div>
