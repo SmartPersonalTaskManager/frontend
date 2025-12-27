@@ -21,7 +21,7 @@ export default function TaskCard({ task, onClick, compact = false }) {
 
     // Find linked compass item (Mission, Vision, or Value)
     const linkedItem = task.missionId
-        ? [...missions, ...visions, ...values].find(i => i.id === task.missionId)
+        ? [...missions, ...visions, ...values].find(i => (i.realId || i.id) === task.missionId)
         : null;
 
     // Date Logic

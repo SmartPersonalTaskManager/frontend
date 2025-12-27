@@ -25,9 +25,13 @@ export function MissionProvider({ children }) {
     const processMissionsData = (data) => {
         const flatMissions = [];
         data.forEach(m => {
+            const rootId = `mission-${m.id}`;
             // Add Root
             flatMissions.push({
                 ...m,
+                id: rootId,
+                realId: m.id,
+                type: 'mission',
                 text: cleanString(m.content),
                 parentId: null, // Root
             });
@@ -37,8 +41,11 @@ export function MissionProvider({ children }) {
                 m.subMissions.forEach(sub => {
                     flatMissions.push({
                         ...sub,
+                        id: `submission-${sub.id}`,
+                        realId: sub.id,
+                        type: 'submission',
                         text: cleanString(sub.title),
-                        parentId: m.id // Link to parent
+                        parentId: rootId // Link to parent
                     });
                 });
             }
@@ -87,12 +94,17 @@ export function MissionProvider({ children }) {
 
         try {
             if (parentId) {
+                // Ensure we have the real ID
+                const realParentId = parentId.toString().startsWith('mission-')
+                    ? parentId.replace('mission-', '')
+                    : parentId;
+
                 const payload = {
                     title: text,
                     description: "",
-                    parentId: parentId
+                    parentId: parseInt(realParentId)
                 };
-                const newSub = await api.post(`/missions/${parentId}/submissions`, payload);
+                const newSub = await api.post(`/missions/${realParentId}/submissions`, payload);
 
                 // Re-fetch and process correctly
                 const data = await api.get(`/missions/user/${userId}`);
@@ -123,15 +135,14 @@ export function MissionProvider({ children }) {
         }));
 
         try {
-            // Find mission to check if it's a submission
-            const missionToUpdate = missions.find(m => m.id === id);
-
-            if (missionToUpdate && missionToUpdate.parentId) {
+            if (id.toString().startsWith('submission-')) {
                 // Is a SubMission
-                await api.put(`/missions/submissions/${id}`, newText);
+                const realId = id.replace('submission-', '');
+                await api.put(`/missions/submissions/${realId}`, newText);
             } else {
                 // Is a Root Mission
-                await api.put(`/missions/${id}`, newText);
+                const realId = id.toString().replace('mission-', '');
+                await api.put(`/missions/${realId}`, newText);
             }
         } catch (error) {
             console.error("Failed to update mission:", error);
@@ -140,20 +151,18 @@ export function MissionProvider({ children }) {
     };
 
     const deleteMission = async (id) => {
-        // Find mission to determine type (Root or Sub)
-        const missionToDelete = missions.find(m => m.id === id);
-        if (!missionToDelete) return;
-
         // Optimistic Delete
         setMissions(prev => prev.filter(m => m.id !== id));
 
         try {
-            if (missionToDelete.parentId) {
+            if (id.toString().startsWith('submission-')) {
                 // Is a SubMission
-                await api.delete(`/missions/submissions/${id}`);
+                const realId = id.replace('submission-', '');
+                await api.delete(`/missions/submissions/${realId}`);
             } else {
                 // Is a Root Mission
-                await api.delete(`/missions/${id}`);
+                const realId = id.toString().replace('mission-', '');
+                await api.delete(`/missions/${realId}`);
             }
         } catch (error) {
             console.error("Failed to delete mission:", error);

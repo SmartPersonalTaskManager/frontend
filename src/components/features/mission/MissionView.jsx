@@ -544,7 +544,7 @@ function MissionCard({ mission, isRoot }) {
     };
 
     // Progress for this specific mission node
-    const linkedTasks = tasks.filter(t => t.missionId === mission.id);
+    const linkedTasks = tasks.filter(t => (mission.type === 'submission' && t.missionId === mission.realId));
     const total = linkedTasks.length;
     const completed = linkedTasks.filter(t => t.status === 'done').length;
     const pct = total === 0 ? 0 : Math.round((completed / total) * 100);

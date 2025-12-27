@@ -79,7 +79,7 @@ export default function TaskDetailModal({ task, onClose }) {
     const subtaskProgress = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
 
     const linkedItem = form.missionId
-        ? [...visions, ...values, ...missions].find(i => i.id === form.missionId)
+        ? [...visions, ...values, ...missions].find(i => (i.realId || i.id) === form.missionId)
         : null;
 
     return (
