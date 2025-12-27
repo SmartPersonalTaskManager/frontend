@@ -128,6 +128,20 @@ export function TaskProvider({ children }) {
 
         const serializedDescription = serializeTaskDescription(taskData.description, taskData.checklist);
 
+        // Handle composite IDs for subMissionId
+        let finalSubMissionId = null;
+        if (taskData.missionId) {
+            const mIdStr = String(taskData.missionId);
+            if (mIdStr.startsWith('submission-')) {
+                finalSubMissionId = parseInt(mIdStr.replace('submission-', ''));
+            } else if (!mIdStr.startsWith('mission-') && !isNaN(mIdStr)) {
+                // Determine if it was legacy number
+                finalSubMissionId = parseInt(mIdStr);
+            }
+            // If it starts with 'mission-', it's a root mission. The backend Task model currently
+            // only supports linking to SubMissions. So we send null to prevent 400 Error.
+        }
+
         const newTaskPayload = {
             ...taskData,
             userId: parseInt(userId),
@@ -137,7 +151,7 @@ export function TaskProvider({ children }) {
             title: taskData.title,
             urgent: taskData.urge,
             important: taskData.imp,
-            subMissionId: taskData.missionId,
+            subMissionId: finalSubMissionId,
             description: serializedDescription,
             dueDate: formattedDate,
             context: taskData.context || '@home',
@@ -153,7 +167,7 @@ export function TaskProvider({ children }) {
                 status: mapBackendStatusToFrontend(createdTask.status),
                 urge: (createdTask.priority === 'URGENT_IMPORTANT' || createdTask.priority === 'URGENT_NOT_IMPORTANT'),
                 imp: (createdTask.priority === 'URGENT_IMPORTANT' || createdTask.priority === 'NOT_URGENT_IMPORTANT'),
-                missionId: createdTask.subMissionId,
+                missionId: createdTask.subMissionId, // Keep backend ID for now, or could map to composite
                 context: createdTask.context,
                 isInbox: createdTask.isInbox,
                 isArchived: createdTask.isArchived,
@@ -184,10 +198,21 @@ export function TaskProvider({ children }) {
 
             const serializedDescription = serializeTaskDescription(merged.description, merged.checklist);
 
+            // Handle composite IDs for subMissionId
+            let finalSubMissionId = null;
+            if (merged.missionId) {
+                const mIdStr = String(merged.missionId);
+                if (mIdStr.startsWith('submission-')) {
+                    finalSubMissionId = parseInt(mIdStr.replace('submission-', ''));
+                } else if (!mIdStr.startsWith('mission-') && !isNaN(mIdStr)) {
+                    finalSubMissionId = parseInt(mIdStr);
+                }
+            }
+
             const payload = {
                 ...merged,
                 status: mapFrontendStatusToBackend(merged.status),
-                subMissionId: merged.missionId,
+                subMissionId: finalSubMissionId,
                 dueDate: formattedDate,
                 context: merged.context,
                 isInbox: merged.isInbox,
