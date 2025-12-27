@@ -82,7 +82,7 @@ function BackendWarmup() {
 }
 
 // Mini Calendar Component
-function MiniCalendar({ tasks }) {
+function MiniCalendar({ tasks, onDateClick }) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [currentYear, setCurrentYear] = useState(now.getFullYear());
@@ -131,6 +131,7 @@ function MiniCalendar({ tasks }) {
     days.push(
       <div
         key={day}
+        onClick={() => onDateClick && onDateClick(new Date(currentYear, currentMonth, day))}
         style={{
           aspectRatio: '1',
           display: 'flex',
@@ -142,6 +143,7 @@ function MiniCalendar({ tasks }) {
           background: isToday ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
           color: isToday ? '#fff' : '#94a3b8',
           fontWeight: isToday ? 600 : 400,
+          cursor: 'pointer',
         }}
       >
         {day}
@@ -243,6 +245,7 @@ function AppContent() {
   const [backendWaking, setBackendWaking] = useState(false);
   const [wakeDuration, setWakeDuration] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [activeCalendarDate, setActiveCalendarDate] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -596,7 +599,14 @@ function AppContent() {
                       zIndex: 1000,
                       minWidth: "280px"
                     }}>
-                      <MiniCalendar tasks={tasks} />
+                      <MiniCalendar
+                        tasks={tasks}
+                        onDateClick={(date) => {
+                          setActiveCalendarDate(date);
+                          setActiveTab("calendar");
+                          setShowCalendar(false);
+                        }}
+                      />
                     </div>
                   </>
                 )}
@@ -677,7 +687,7 @@ function AppContent() {
             </DndContext>
           )}
           {activeTab === "mission" && <MissionView />}
-          {activeTab === "calendar" && <CalendarView />}
+          {activeTab === "calendar" && <CalendarView initialDate={activeCalendarDate} />}
           {activeTab === "stats" && <StatsView />}
           {activeTab === "archive" && <ArchivedTasksView />}
           {activeTab === "review" && <WeeklyReview />}
@@ -960,7 +970,6 @@ function AppContent() {
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>⚠️</span>
                       <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Replace All Data?</h3>
                     </div>
                     <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: '1.6' }}>
