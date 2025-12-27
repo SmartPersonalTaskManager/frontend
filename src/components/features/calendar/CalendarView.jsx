@@ -242,7 +242,7 @@ export default function CalendarView({ initialDate }) {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(7, 1fr)",
-            gridAutoRows: "minmax(120px, 1fr)",
+            gridAutoRows: "120px",
             overflowY: "auto",
             flex: 1
           }}>
@@ -259,7 +259,8 @@ export default function CalendarView({ initialDate }) {
                   padding: "0.5rem",
                   borderRight: "1px solid rgba(255,255,255,0.05)",
                   borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  minHeight: "120px",
+                  height: "120px",
+                  maxHeight: "120px",
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
