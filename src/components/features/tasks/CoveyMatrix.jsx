@@ -9,6 +9,7 @@ import { Plus, X, LayoutGrid, List, Zap, Filter, Mic, Settings, Target, ChevronD
 import useVoiceInput from '../../../hooks/useVoiceInput';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 export default function CoveyMatrix() {
     const { tasks, addTask, contexts } = useTasks();
@@ -483,6 +484,11 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        // Validate character limit
+        if (form.title.length > CHARACTER_LIMITS.TASK) {
+            alert(`Task title must be ${CHARACTER_LIMITS.TASK} characters or less.`);
+            return;
+        }
         // Validate all required fields
         if (!form.title || !form.missionId || !form.dueDate || !form.context) return;
 
@@ -495,8 +501,8 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
         onClose();
     };
 
-    // Check if form is valid (all required fields filled)
-    const isFormValid = Boolean(form.title && form.missionId && form.dueDate && form.context);
+    // Check if form is valid (all required fields filled and within limits)
+    const isFormValid = Boolean(form.title && form.title.length <= CHARACTER_LIMITS.TASK && form.missionId && form.dueDate && form.context);
 
     // Get selected role/submission text for display
     const getSelectedRoleText = () => {
@@ -618,8 +624,8 @@ function TaskModal({ onClose, onSave, contexts, initialTitle = '' }) {
                             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingRight: '0.5rem' }}>
 
 
-                                {getRootMissions && getRootMissions().map(root => {
-                                    const subs = getSubMissions ? getSubMissions(root.id) : [];
+                                {getRootMissions && getRootMissions().filter(m => !m.isArchived).map(root => {
+                                    const subs = getSubMissions ? getSubMissions(root.id).filter(s => !s.isArchived) : [];
                                     return (
                                         <div key={root.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '1rem' }}>
                                             <div style={{ padding: '0.5rem', fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

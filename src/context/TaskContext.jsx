@@ -263,6 +263,73 @@ export function TaskProvider({ children }) {
 
     const deletePermanently = deleteTask;
 
+    // Cascade operations for Mission/Submission archive/delete
+    const cascadeArchiveTasksBySubmissionIds = async (submissionRealIds) => {
+        const tasksToArchive = tasks.filter(t => submissionRealIds.includes(t.missionId));
+        const now = new Date().toISOString();
+
+        // Optimistic update
+        setTasks(prev => prev.map(t =>
+            submissionRealIds.includes(t.missionId)
+                ? { ...t, isArchived: true, completedAt: t.completedAt || now }
+                : t
+        ));
+
+        // API calls
+        for (const task of tasksToArchive) {
+            try {
+                await api.put(`/tasks/${task.id}`, {
+                    ...task,
+                    status: mapFrontendStatusToBackend(task.status),
+                    isArchived: true,
+                    completedAt: task.completedAt || now
+                });
+            } catch (error) {
+                console.error(`Failed to archive task ${task.id}:`, error);
+            }
+        }
+    };
+
+    const cascadeUnarchiveTasksBySubmissionIds = async (submissionRealIds) => {
+        const tasksToUnarchive = tasks.filter(t => submissionRealIds.includes(t.missionId) && t.isArchived);
+
+        // Optimistic update
+        setTasks(prev => prev.map(t =>
+            submissionRealIds.includes(t.missionId)
+                ? { ...t, isArchived: false }
+                : t
+        ));
+
+        // API calls
+        for (const task of tasksToUnarchive) {
+            try {
+                await api.put(`/tasks/${task.id}`, {
+                    ...task,
+                    status: mapFrontendStatusToBackend(task.status),
+                    isArchived: false
+                });
+            } catch (error) {
+                console.error(`Failed to unarchive task ${task.id}:`, error);
+            }
+        }
+    };
+
+    const cascadeDeleteTasksBySubmissionIds = async (submissionRealIds) => {
+        const tasksToDelete = tasks.filter(t => submissionRealIds.includes(t.missionId));
+
+        // Optimistic update
+        setTasks(prev => prev.filter(t => !submissionRealIds.includes(t.missionId)));
+
+        // API calls
+        for (const task of tasksToDelete) {
+            try {
+                await api.delete(`/tasks/${task.id}`);
+            } catch (error) {
+                console.error(`Failed to delete task ${task.id}:`, error);
+            }
+        }
+    };
+
     const addContext = async (name) => {
         const userId = localStorage.getItem("sptm_userId");
         if (!userId) return;
@@ -328,7 +395,11 @@ export function TaskProvider({ children }) {
             addContext,
             deleteContext,
             restoreContexts,
-            toggleTimer: (id) => { /* Timer logic local only for now unless we add endpoint */ }
+            toggleTimer: (id) => { /* Timer logic local only for now unless we add endpoint */ },
+            // Cascade functions for Mission/Submission operations
+            cascadeArchiveTasksBySubmissionIds,
+            cascadeUnarchiveTasksBySubmissionIds,
+            cascadeDeleteTasksBySubmissionIds
         }}>
             {children}
         </TaskContext.Provider>

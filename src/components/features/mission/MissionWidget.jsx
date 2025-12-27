@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight, Target, Heart } from 'lucide-react';
 
 export default function MissionWidget({ collapsed }) {
     const { getRootMissions, values = [] } = useMission();
-    const missions = getRootMissions();
+    // Filter out archived missions
+    const missions = getRootMissions().filter(m => !m.isArchived);
 
     const [missionIndex, setMissionIndex] = useState(0);
     const [valueIndex, setValueIndex] = useState(0);

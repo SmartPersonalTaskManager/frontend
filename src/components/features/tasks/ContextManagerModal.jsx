@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTasks } from '../../../context/TaskContext';
 import { X, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 export default function ContextManagerModal({ onClose }) {
     const { contexts, addContext, deleteContext, restoreContexts } = useTasks();
@@ -13,6 +14,12 @@ export default function ContextManagerModal({ onClose }) {
         if (!newContextName.trim()) return;
         let name = newContextName.trim();
         if (!name.startsWith('@')) name = '@' + name;
+
+        // Validate character limit
+        if (name.length > CHARACTER_LIMITS.CONTEXT) {
+            alert(`Context name must be ${CHARACTER_LIMITS.CONTEXT} characters or less (including @).`);
+            return;
+        }
 
         addContext(name);
         setNewContextName('');

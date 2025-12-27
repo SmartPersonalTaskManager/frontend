@@ -60,30 +60,20 @@ export default function StatsView() {
         // Add an 'Unlinked' category
         missionProgress['unlinked'] = { name: 'Unlinked / General', total: 0, completed: 0 };
 
-        tasks.filter(t => !t.isArchived).forEach(t => {
+        // Include ALL tasks (including archived) for progress metrics
+        tasks.forEach(t => {
             let mId = 'unlinked';
             // Find which root mission this task belongs to
             if (t.missionId) {
-                // Determine if t.missionId is a raw ID or composite
-                // TaskContext usually converts to raw before saving, but local state might be mixed?
-                // Actually t.missionId from backend is raw Long.
-                // But missions list now has composite IDs 'mission-X' or 'submission-X'.
-
-                // We need to find the mission in our Context list that matches this raw ID
-                // The mission in context has property 'realId'.
                 const mission = missions.find(m => m.realId === t.missionId && (m.id.startsWith('submission-') || m.id.startsWith('mission-')));
 
                 if (mission && mission.parentId) {
-                    // It's a submission, find parent
-                    // parentId in mission context is now a composite string like 'mission-1'
                     const parent = missions.find(p => p.id === mission.parentId);
                     if (parent) mId = parent.id;
                 }
             }
 
             if (!missionProgress[mId]) {
-                // Fallback if mission logic fails or new mission not yet in initialized list
-                // Just ignore or add to unlinked? Let's add if we have the name
                 const m = missions.find(x => x.id === mId);
                 if (m) {
                     missionProgress[mId] = { name: m.text, total: 0, completed: 0 };
@@ -96,31 +86,28 @@ export default function StatsView() {
             if (t.status === 'done') missionProgress[mId].completed++;
         });
 
-        // --- NEW: Calculate Mission Progress Bars with 3 segments ---
-        // Uses dueDate for completed tasks to determine which week they belonged to
+        // --- Calculate Mission Progress Bars with 3 segments ---
         const missionProgressBars = getRootMissions()
             .filter(m => !m.isArchived)
             .map(rootMission => {
-                // Get all submissions for this mission
-                const subs = missions.filter(m => m.parentId === rootMission.id && !m.isArchived);
+                // Get all submissions for this mission (including archived for progress)
+                const subs = missions.filter(m => m.parentId === rootMission.id);
                 const subRealIds = subs.map(s => s.realId);
 
-                // Get all tasks linked to submissions of this mission
+                // Get all tasks linked to submissions of this mission (including archived)
                 const linkedTasks = tasks.filter(t => {
-                    if (!t.missionId || t.isArchived) return false;
+                    if (!t.missionId) return false;
                     return subRealIds.includes(t.missionId);
                 });
 
                 const totalTasks = linkedTasks.length;
 
-                // Helper: Get the reference date for a task (dueDate if available, else completedAt)
                 const getTaskDate = (task) => {
                     if (task.dueDate) return new Date(task.dueDate);
                     if (task.completedAt) return new Date(task.completedAt);
                     return null;
                 };
 
-                // Count completed tasks BEFORE this week (based on dueDate)
                 const completedBeforeWeek = linkedTasks.filter(t => {
                     if (t.status !== 'done') return false;
                     const taskDate = getTaskDate(t);
@@ -128,7 +115,6 @@ export default function StatsView() {
                     return taskDate < startOfWeek;
                 }).length;
 
-                // Count completed tasks THIS week (based on dueDate)
                 const completedThisWeek = linkedTasks.filter(t => {
                     if (t.status !== 'done') return false;
                     const taskDate = getTaskDate(t);
@@ -136,7 +122,6 @@ export default function StatsView() {
                     return taskDate >= startOfWeek && taskDate <= endOfWeek;
                 }).length;
 
-                // Remaining tasks (not yet completed)
                 const remaining = totalTasks - completedBeforeWeek - completedThisWeek;
 
                 return {
@@ -148,7 +133,7 @@ export default function StatsView() {
                     remaining
                 };
             })
-            .filter(mp => mp.totalTasks > 0); // Only show missions with linked tasks
+            .filter(mp => mp.totalTasks > 0);
 
         return {
             completedTasks: completedLastWeek,
@@ -161,15 +146,13 @@ export default function StatsView() {
 
     // --- Data Processing for General Stats (Filtered) ---
     const filteredStats = useMemo(() => {
-        // 1. Task Stats
-        let filteredTasks = tasks.filter(t => !t.isArchived);
+        // Include ALL tasks for progress metrics (archived tasks still count)
+        let filteredTasks = tasks;
 
         if (selectedMissionId !== 'all') {
             filteredTasks = filteredTasks.filter(t => {
                 if (selectedMissionId === 'unlinked') return !t.missionId;
 
-                // Rule: Tasks are linked to Submissions, not root Missions directly.
-                // If selected is a root mission, include its submissions' tasks
                 const subMissionsRealIds = missions.filter(m => m.parentId === selectedMissionId).map(m => m.realId);
                 if (subMissionsRealIds.includes(t.missionId)) return true;
 
@@ -181,29 +164,23 @@ export default function StatsView() {
         const completedTasks = filteredTasks.filter(t => t.status === 'done').length;
         const inProgressTasks = totalTasks - completedTasks;
 
-        // 2. Submission Stats
+        // 2. Submission Stats - Include archived for progress
         let filteredSubmissions = [];
         if (selectedMissionId === 'all') {
-            // All submissions (items with a parentId)
-            filteredSubmissions = missions.filter(m => m.parentId && !m.isArchived);
+            filteredSubmissions = missions.filter(m => m.parentId);
         } else if (selectedMissionId === 'unlinked') {
-            // No submissions are unlinked
             filteredSubmissions = [];
         } else {
-            // Submissions of the selected mission
-            filteredSubmissions = missions.filter(m => m.parentId === selectedMissionId && !m.isArchived);
+            filteredSubmissions = missions.filter(m => m.parentId === selectedMissionId);
         }
 
         const totalSubs = filteredSubmissions.length;
         const completedSubs = filteredSubmissions.filter(s => {
-            // 1. Explicitly done
             if (s.status === 'done') return true;
 
-            // 2. Implicitly done (All tasks completed)
-            // Note: s.realId is the backend ID, t.missionId matches that
-            const subTasks = tasks.filter(t => !t.isArchived && t.missionId === s.realId);
+            // Include all tasks (archived and active) for progress calculation
+            const subTasks = tasks.filter(t => t.missionId === s.realId);
 
-            // If it has tasks and all are done, count as completed
             if (subTasks.length > 0 && subTasks.every(t => t.status === 'done')) {
                 return true;
             }
@@ -220,17 +197,16 @@ export default function StatsView() {
             const rootMissions = getRootMissions().filter(m => !m.isArchived);
 
             rootMissions.forEach(rootMission => {
-                // Get all submissions for this mission
-                const missionSubmissions = missions.filter(m => m.parentId === rootMission.id && !m.isArchived);
+                // Get all submissions for this mission (include archived for progress)
+                const missionSubmissions = missions.filter(m => m.parentId === rootMission.id);
 
                 if (missionSubmissions.length === 0) {
-                    // No submissions = in progress
                     inProgressMissions++;
                 } else {
-                    // Check if all submissions are complete
                     const allSubsComplete = missionSubmissions.every(s => {
                         if (s.status === 'done') return true;
-                        const subTasks = tasks.filter(t => !t.isArchived && t.missionId === s.realId);
+                        // Include all tasks for progress calculation
+                        const subTasks = tasks.filter(t => t.missionId === s.realId);
                         return subTasks.length > 0 && subTasks.every(t => t.status === 'done');
                     });
 
@@ -287,8 +263,8 @@ export default function StatsView() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                background: '#0f172a',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.05)',
                                 borderRadius: 'var(--radius-md)',
                                 padding: '0.5rem 1rem',
                                 color: 'white',
@@ -397,7 +373,8 @@ export default function StatsView() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        minHeight: '95px'
+                        minHeight: '95px',
+                        height: '120px'
                     }}>
                         {/* Header */}
                         <div style={{ marginBottom: '0.75rem' }}>
@@ -441,7 +418,8 @@ export default function StatsView() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',
-                        minHeight: '95px'
+                        minHeight: '95px',
+                        height: '120px'
                     }}>
                         {/* Header */}
                         <div style={{ marginBottom: '0.5rem' }}>
@@ -486,7 +464,8 @@ export default function StatsView() {
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'center',
-                            minHeight: '95px'
+                            minHeight: '95px',
+                            height: '120px'
                         }}>
                             {/* Header */}
                             <div style={{ marginBottom: '0.5rem' }}>
@@ -542,7 +521,7 @@ export default function StatsView() {
                     >
                         Weekly Review
                     </h3>
-                    <span style={{ fontSize: '0.85rem', color: '#ffffff', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', background: 'rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#ffffff', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                         {weeklyStats.dateRangeLabel}
                     </span>
                 </div>
@@ -561,7 +540,8 @@ export default function StatsView() {
                                     background: 'rgba(0,0,0,0.2)',
                                     borderRadius: 'var(--radius-md)',
                                     border: isComplete ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                                    minHeight: '95px'
+                                    minHeight: '95px',
+                                    height: '120px'
                                 }}>
                                     {/* Mission Name */}
                                     <div style={{
@@ -583,8 +563,9 @@ export default function StatsView() {
                                             {mp.missionName}
                                         </div>
                                         <div style={{
-                                            fontSize: '0.8rem',
-                                            color: 'var(--color-text-muted)'
+                                            fontSize: '0.9rem',
+                                            color: 'white',
+                                            fontWeight: 400
                                         }}>
                                             {mp.completedBeforeWeek + mp.completedThisWeek}/{mp.totalTasks}
                                         </div>

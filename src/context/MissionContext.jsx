@@ -168,23 +168,49 @@ export function MissionProvider({ children }) {
         }
     };
 
-    const deleteMission = async (id) => {
-        // Optimistic Delete
-        setMissions(prev => prev.filter(m => m.id !== id));
+    // Get all submissions for a mission
+    const getSubmissionsForMission = (missionId) => {
+        return missions.filter(m => m.parentId === missionId);
+    };
+
+    // Get realIds for a mission and all its submissions (for task cascade)
+    const getSubmissionRealIdsForMission = (missionId) => {
+        const subs = getSubmissionsForMission(missionId);
+        return subs.map(s => s.realId);
+    };
+
+    const deleteMission = async (id, cascadeDeleteTasks = null) => {
+        // If it's a root mission, cascade to submissions and their tasks
+        if (!id.toString().startsWith('submission-')) {
+            const submissionRealIds = getSubmissionRealIdsForMission(id);
+            const submissions = getSubmissionsForMission(id);
+
+            // Cascade delete tasks if callback provided
+            if (cascadeDeleteTasks && submissionRealIds.length > 0) {
+                await cascadeDeleteTasks(submissionRealIds);
+            }
+
+            // Remove all submissions from state
+            setMissions(prev => prev.filter(m => m.id !== id && m.parentId !== id));
+        } else {
+            // It's a submission - cascade delete its tasks
+            const realId = parseInt(id.replace('submission-', ''));
+            if (cascadeDeleteTasks) {
+                await cascadeDeleteTasks([realId]);
+            }
+            setMissions(prev => prev.filter(m => m.id !== id));
+        }
 
         try {
             if (id.toString().startsWith('submission-')) {
-                // Is a SubMission
                 const realId = id.replace('submission-', '');
                 await api.delete(`/missions/submissions/${realId}`);
             } else {
-                // Is a Root Mission
                 const realId = id.toString().replace('mission-', '');
                 await api.delete(`/missions/${realId}`);
             }
         } catch (error) {
             console.error("Failed to delete mission:", error);
-            // Revert todo?
         }
     };
 
@@ -255,66 +281,140 @@ export function MissionProvider({ children }) {
     };
 
     // --- Archive Operations for Missions/SubMissions ---
-    const archiveMission = async (id) => {
-        // Optimistic update
-        setMissions(prev => prev.map(m =>
-            m.id === id ? { ...m, isArchived: true, completedAt: new Date().toISOString() } : m
-        ));
+    const archiveMission = async (id, cascadeArchiveTasks = null) => {
+        const now = new Date().toISOString();
 
-        try {
-            if (id.toString().startsWith('submission-')) {
-                const realId = id.replace('submission-', '');
-                await api.put(`/missions/submissions/${realId}/archive`);
-            } else {
+        // If it's a root mission, cascade to submissions and their tasks
+        if (!id.toString().startsWith('submission-')) {
+            const submissionRealIds = getSubmissionRealIdsForMission(id);
+            const submissions = getSubmissionsForMission(id);
+
+            // Cascade archive tasks if callback provided
+            if (cascadeArchiveTasks && submissionRealIds.length > 0) {
+                await cascadeArchiveTasks(submissionRealIds);
+            }
+
+            // Archive the mission and all its submissions
+            setMissions(prev => prev.map(m => {
+                if (m.id === id || m.parentId === id) {
+                    return { ...m, isArchived: true, completedAt: now };
+                }
+                return m;
+            }));
+
+            // API calls for mission and submissions
+            try {
                 const realId = id.toString().replace('mission-', '');
                 await api.put(`/missions/${realId}/archive`);
+                // Archive all submissions on backend
+                for (const sub of submissions) {
+                    await api.put(`/missions/submissions/${sub.realId}/archive`);
+                }
+            } catch (error) {
+                console.error("Failed to archive mission:", error);
             }
-        } catch (error) {
-            console.error("Failed to archive mission:", error);
-            // Revert on error
+        } else {
+            // It's a submission - cascade archive its tasks
+            const realId = parseInt(id.replace('submission-', ''));
+            if (cascadeArchiveTasks) {
+                await cascadeArchiveTasks([realId]);
+            }
+
+            setMissions(prev => prev.map(m =>
+                m.id === id ? { ...m, isArchived: true, completedAt: now } : m
+            ));
+
+            try {
+                await api.put(`/missions/submissions/${realId}/archive`);
+            } catch (error) {
+                console.error("Failed to archive submission:", error);
+            }
+        }
+    };
+
+    const unarchiveMission = async (id, cascadeUnarchiveTasks = null) => {
+        // If it's a root mission, cascade to submissions and their tasks
+        if (!id.toString().startsWith('submission-')) {
+            const submissionRealIds = getSubmissionRealIdsForMission(id);
+            const submissions = getSubmissionsForMission(id);
+
+            // Cascade unarchive tasks if callback provided
+            if (cascadeUnarchiveTasks && submissionRealIds.length > 0) {
+                await cascadeUnarchiveTasks(submissionRealIds);
+            }
+
+            // Unarchive the mission and all its submissions
+            setMissions(prev => prev.map(m => {
+                if (m.id === id || m.parentId === id) {
+                    return { ...m, isArchived: false, completedAt: null };
+                }
+                return m;
+            }));
+
+            // API calls
+            try {
+                const realId = id.toString().replace('mission-', '');
+                await api.put(`/missions/${realId}/unarchive`);
+                for (const sub of submissions) {
+                    await api.put(`/missions/submissions/${sub.realId}/unarchive`);
+                }
+            } catch (error) {
+                console.error("Failed to unarchive mission:", error);
+            }
+        } else {
+            // It's a submission - cascade unarchive its tasks
+            const realId = parseInt(id.replace('submission-', ''));
+            if (cascadeUnarchiveTasks) {
+                await cascadeUnarchiveTasks([realId]);
+            }
+
             setMissions(prev => prev.map(m =>
                 m.id === id ? { ...m, isArchived: false, completedAt: null } : m
             ));
-        }
-    };
 
-    const unarchiveMission = async (id) => {
-        // Optimistic update
-        setMissions(prev => prev.map(m =>
-            m.id === id ? { ...m, isArchived: false, completedAt: null } : m
-        ));
-
-        try {
-            if (id.toString().startsWith('submission-')) {
-                const realId = id.replace('submission-', '');
+            try {
                 await api.put(`/missions/submissions/${realId}/unarchive`);
-            } else {
-                const realId = id.toString().replace('mission-', '');
-                await api.put(`/missions/${realId}/unarchive`);
+            } catch (error) {
+                console.error("Failed to unarchive submission:", error);
             }
-        } catch (error) {
-            console.error("Failed to unarchive mission:", error);
-            // Revert on error
-            setMissions(prev => prev.map(m =>
-                m.id === id ? { ...m, isArchived: true } : m
-            ));
         }
     };
 
-    const deleteMissionPermanently = async (id) => {
-        // Actually delete from backend
-        setMissions(prev => prev.filter(m => m.id !== id));
+    const deleteMissionPermanently = async (id, cascadeDeleteTasks = null) => {
+        // If it's a root mission, cascade to submissions and their tasks
+        if (!id.toString().startsWith('submission-')) {
+            const submissionRealIds = getSubmissionRealIdsForMission(id);
+            const submissions = getSubmissionsForMission(id);
 
-        try {
-            if (id.toString().startsWith('submission-')) {
-                const realId = id.replace('submission-', '');
-                await api.delete(`/missions/submissions/${realId}`);
-            } else {
+            // Cascade delete tasks if callback provided
+            if (cascadeDeleteTasks && submissionRealIds.length > 0) {
+                await cascadeDeleteTasks(submissionRealIds);
+            }
+
+            // Remove mission and all its submissions from state
+            setMissions(prev => prev.filter(m => m.id !== id && m.parentId !== id));
+
+            // API calls - delete mission (backend should cascade delete submissions)
+            try {
                 const realId = id.toString().replace('mission-', '');
                 await api.delete(`/missions/${realId}`);
+            } catch (error) {
+                console.error("Failed to delete mission permanently:", error);
             }
-        } catch (error) {
-            console.error("Failed to delete mission permanently:", error);
+        } else {
+            // It's a submission - cascade delete its tasks
+            const realId = parseInt(id.replace('submission-', ''));
+            if (cascadeDeleteTasks) {
+                await cascadeDeleteTasks([realId]);
+            }
+
+            setMissions(prev => prev.filter(m => m.id !== id));
+
+            try {
+                await api.delete(`/missions/submissions/${realId}`);
+            } catch (error) {
+                console.error("Failed to delete submission permanently:", error);
+            }
         }
     };
 

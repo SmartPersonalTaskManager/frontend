@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTasks } from '../../../context/TaskContext';
 import useVoiceInput from '../../../hooks/useVoiceInput';
 import { Plus, Zap, Mic, Trash2, X } from 'lucide-react';
+import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 export default function QuickInboxModal({ onClose, onCaptureSelect, excludeIds = [] }) {
     const { tasks, addTask, updateTask, deletePermanently } = useTasks();
@@ -22,6 +23,12 @@ export default function QuickInboxModal({ onClose, onCaptureSelect, excludeIds =
     const handleQuickAdd = (e) => {
         e.preventDefault();
         if (!quickInput.trim()) return;
+
+        // Validate character limit
+        if (quickInput.length > CHARACTER_LIMITS.QUICK_CAPTURE) {
+            alert(`Quick capture must be ${CHARACTER_LIMITS.QUICK_CAPTURE} characters or less.`);
+            return;
+        }
 
         addTask({
             title: quickInput,

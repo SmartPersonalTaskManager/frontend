@@ -4,7 +4,7 @@ import { useMission } from '../../../context/MissionContext';
 import { Archive, Trash2, RotateCcw, Target, Flag } from 'lucide-react';
 
 export default function ArchivedTasksView() {
-    const { tasks, deletePermanently, unarchiveTask } = useTasks();
+    const { tasks, deletePermanently, unarchiveTask, cascadeUnarchiveTasksBySubmissionIds, cascadeDeleteTasksBySubmissionIds } = useTasks();
     const { missions, unarchiveMission, deleteMissionPermanently } = useMission();
 
     const [activeTab, setActiveTab] = useState('tasks');
@@ -114,8 +114,8 @@ export default function ArchivedTasksView() {
                                 key={mission.id}
                                 item={mission}
                                 title={mission.text}
-                                onRestore={() => unarchiveMission(mission.id)}
-                                onDelete={() => deleteMissionPermanently(mission.id)}
+                                onRestore={() => unarchiveMission(mission.id, cascadeUnarchiveTasksBySubmissionIds)}
+                                onDelete={() => deleteMissionPermanently(mission.id, cascadeDeleteTasksBySubmissionIds)}
                                 type="mission"
                             />
                         ))}
@@ -131,8 +131,8 @@ export default function ArchivedTasksView() {
                                 key={submission.id}
                                 item={submission}
                                 title={submission.text}
-                                onRestore={() => unarchiveMission(submission.id)}
-                                onDelete={() => deleteMissionPermanently(submission.id)}
+                                onRestore={() => unarchiveMission(submission.id, cascadeUnarchiveTasksBySubmissionIds)}
+                                onDelete={() => deleteMissionPermanently(submission.id, cascadeDeleteTasksBySubmissionIds)}
                                 type="submission"
                             />
                         ))}

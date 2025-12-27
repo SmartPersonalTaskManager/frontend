@@ -5,6 +5,7 @@ import MissionWizard from './MissionWizard';
 import MissionHistoryModal from './MissionHistoryModal';
 import { Plus, Edit2, Trash2, Check, X, Compass, Target, Heart, Clock, AlertCircle, MoreVertical, Archive } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 const ToastContext = createContext();
 
@@ -66,7 +67,8 @@ export default function MissionView() {
     const safeVisions = Array.isArray(visions) ? visions : [];
     const safeValues = Array.isArray(values) ? values : [];
 
-    const rootMissions = getRootMissions();
+    // Filter out archived missions from display
+    const rootMissions = getRootMissions().filter(m => !m.isArchived);
 
     // If no data at all, show wizard - REMOVED per user request
     // const hasData = rootMissions.length > 0 || safeVisions.length > 0 || safeValues.length > 0;
@@ -105,8 +107,8 @@ function MissionViewContent({
     const showToast = useToast();
 
     const handleAddMission = () => {
-        if (newMissionText.length > 100) {
-            showToast("Character limit exceeded! Max 100 characters allowed.");
+        if (newMissionText.length > CHARACTER_LIMITS.MISSION) {
+            showToast(`Character limit exceeded! Max ${CHARACTER_LIMITS.MISSION} characters allowed.`);
             return;
         }
         if (newMissionText.trim()) {
@@ -314,8 +316,8 @@ function ListSection({ title, icon, items = [], onAdd, onUpdate, onDelete, place
     const showToast = useToast();
 
     const handleAdd = () => {
-        if (newItemText.length > 100) {
-            showToast("Character limit exceeded! Max 100 characters allowed.");
+        if (newItemText.length > CHARACTER_LIMITS.VALUE) {
+            showToast(`Character limit exceeded! Max ${CHARACTER_LIMITS.VALUE} characters allowed.`);
             return;
         }
         if (newItemText.trim()) {
@@ -434,8 +436,8 @@ function ListItem({ item, onUpdate, onDelete }) {
     const showToast = useToast();
 
     const handleSave = () => {
-        if (text.length > 100) {
-            showToast("Character limit exceeded! Max 100 characters allowed.");
+        if (text.length > CHARACTER_LIMITS.VALUE) {
+            showToast(`Character limit exceeded! Max ${CHARACTER_LIMITS.VALUE} characters allowed.`);
             return;
         }
         onUpdate(item.id, text);
@@ -640,14 +642,24 @@ function ListItem({ item, onUpdate, onDelete }) {
 
 function MissionCard({ mission, isRoot }) {
     const { updateMission, deleteMission, addMission, getSubMissions, archiveMission } = useMission();
-    const { tasks } = useTasks();
+    const { tasks, cascadeArchiveTasksBySubmissionIds, cascadeDeleteTasksBySubmissionIds } = useTasks();
     const [isEditing, setIsEditing] = useState(false);
     const [isAddingChild, setIsAddingChild] = useState(false);
 
-    const subMissions = getSubMissions(mission.id);
+    // subMissions for display (exclude archived)
+    const subMissions = getSubMissions(mission.id).filter(m => !m.isArchived);
+
+    // ALL submissions for completion check (include archived)
+    const allSubMissions = getSubMissions(mission.id);
 
     // Calculate Mission Completion Status (for Archive)
-    const isMissionComplete = isRoot && subMissions.length > 0 && subMissions.every(sub => {
+    // A mission is complete if it has submissions AND all of them are either:
+    // 1. Already archived, OR
+    // 2. Have all their tasks completed
+    const isMissionComplete = isRoot && allSubMissions.length > 0 && allSubMissions.every(sub => {
+        // If already archived, it counts as complete
+        if (sub.isArchived) return true;
+        // Otherwise, check if all tasks are done
         const subTasks = tasks.filter(t => t.missionId === sub.realId);
         return subTasks.length > 0 && subTasks.every(t => t.status === 'done' || t.isArchived);
     });
@@ -664,8 +676,10 @@ function MissionCard({ mission, isRoot }) {
     const showToast = useToast();
 
     const handleSave = () => {
-        if (editText.length > 100) {
-            showToast("Character limit exceeded! Max 100 characters allowed.");
+        // Mission edit limit: 60 for root missions, 30 for submissions
+        const limit = isRoot ? CHARACTER_LIMITS.MISSION : CHARACTER_LIMITS.SUBMISSION;
+        if (editText.length > limit) {
+            showToast(`Character limit exceeded! Max ${limit} characters allowed.`);
             return;
         }
         updateMission(mission.id, editText);
@@ -673,8 +687,8 @@ function MissionCard({ mission, isRoot }) {
     };
 
     const handleAddChild = () => {
-        if (newRoleText.length > 100) {
-            showToast("Character limit exceeded! Max 100 characters allowed.");
+        if (newRoleText.length > CHARACTER_LIMITS.SUBMISSION) {
+            showToast(`Character limit exceeded! Max ${CHARACTER_LIMITS.SUBMISSION} characters allowed.`);
             return;
         }
         if (newRoleText.trim()) {
@@ -996,7 +1010,7 @@ function MissionCard({ mission, isRoot }) {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            deleteMission(mission.id);
+                                            deleteMission(mission.id, cascadeDeleteTasksBySubmissionIds);
                                             setShowDeleteConfirm(false);
                                         }}
                                         style={{
@@ -1063,7 +1077,7 @@ function MissionCard({ mission, isRoot }) {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            archiveMission(mission.id);
+                                            archiveMission(mission.id, cascadeArchiveTasksBySubmissionIds);
                                             setShowArchiveConfirm(false);
                                         }}
                                         style={{
@@ -1449,7 +1463,7 @@ function MissionCard({ mission, isRoot }) {
                             </button>
                             <button
                                 onClick={() => {
-                                    deleteMission(mission.id);
+                                    deleteMission(mission.id, cascadeDeleteTasksBySubmissionIds);
                                     setShowDeleteConfirm(false);
                                 }}
                                 style={{
@@ -1514,7 +1528,7 @@ function MissionCard({ mission, isRoot }) {
                             </button>
                             <button
                                 onClick={() => {
-                                    archiveMission(mission.id);
+                                    archiveMission(mission.id, cascadeArchiveTasksBySubmissionIds);
                                     setShowArchiveConfirm(false);
                                 }}
                                 style={{

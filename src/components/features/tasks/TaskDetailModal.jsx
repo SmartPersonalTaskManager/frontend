@@ -5,6 +5,7 @@ import {
     X, CheckCircle2, Circle, Plus, Trash2, Tag, Target, ChevronDown,
     ListChecks, Edit2, Save, Calendar, Archive, Flame, Star
 } from 'lucide-react';
+import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 export default function TaskDetailModal({ task, onClose }) {
     const { updateTask, deleteTask, deletePermanently, contexts } = useTasks();
@@ -40,6 +41,10 @@ export default function TaskDetailModal({ task, onClose }) {
     }, [task]);
 
     const handleSave = () => {
+        if (form.title.length > CHARACTER_LIMITS.TASK) {
+            alert(`Task title must be ${CHARACTER_LIMITS.TASK} characters or less.`);
+            return;
+        }
         updateTask(task.id, form);
         setEditMode(false);
     };
@@ -47,6 +52,10 @@ export default function TaskDetailModal({ task, onClose }) {
     const handleAddSubtask = (e) => {
         e.preventDefault();
         if (!newSubtask.trim()) return;
+        if (newSubtask.length > CHARACTER_LIMITS.CHECKLIST) {
+            alert(`Checklist item must be ${CHARACTER_LIMITS.CHECKLIST} characters or less.`);
+            return;
+        }
 
         const newSubtaskItem = {
             id: crypto.randomUUID(),
