@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTasks } from "../../../context/TaskContext";
 import { useMission } from "../../../context/MissionContext";
-import { ChevronLeft, ChevronRight, Calendar, X, Clock, Tag, CheckCircle2, Target, AlertCircle, Archive, Circle, CheckCircle, RefreshCw } from "lucide-react";
+import { useGoogleCalendar } from "../../../hooks/useGoogleCalendar";
+import { ChevronLeft, ChevronRight, Calendar, X, Clock, Tag, CheckCircle2, Target, AlertCircle, Archive, Circle, CheckCircle, RefreshCw, ExternalLink } from "lucide-react";
 import GoogleCalendarSync from "./GoogleCalendarSync";
 
 export default function CalendarView({ initialDate }) {
   const { tasks, deleteTask, toggleTaskStatus } = useTasks();
   const { missions = [], visions = [], values = [] } = useMission();
+  const { calendarEvents, fetchCalendarEvents, isAuthenticated, isLoading } = useGoogleCalendar();
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
 
   useEffect(() => {
@@ -83,14 +85,14 @@ export default function CalendarView({ initialDate }) {
   }
 
   const getTasksForDate = (day) => {
-    if (!day) return [];
+    if (!day) return { tasks: [], events: [] };
 
     // Target date components
     const targetYear = currentDate.getFullYear();
     const targetMonth = currentDate.getMonth(); // 0-indexed
     const targetDay = day;
 
-    return tasks.filter((t) => {
+    const filteredTasks = tasks.filter((t) => {
       if (!t.dueDate) return false;
       if (t.isArchived) return false; // Don't show archived tasks
 
@@ -103,6 +105,22 @@ export default function CalendarView({ initialDate }) {
         taskDate.getFullYear() === targetYear
       );
     });
+
+    // Filter Google Calendar events for this date
+    const filteredEvents = (calendarEvents || []).filter((event) => {
+      if (!event.startTime) return false;
+
+      const eventDate = new Date(event.startTime);
+      if (isNaN(eventDate.getTime())) return false;
+
+      return (
+        eventDate.getDate() === targetDay &&
+        eventDate.getMonth() === targetMonth &&
+        eventDate.getFullYear() === targetYear
+      );
+    });
+
+    return { tasks: filteredTasks, events: filteredEvents };
   };
 
   return (
@@ -335,9 +353,10 @@ export default function CalendarView({ initialDate }) {
                       }}
                       className="calendar-day-tasks"
                     >
-                      {getTasksForDate(day).map((task) => (
+                      {/* Local Tasks */}
+                      {getTasksForDate(day).tasks.map((task) => (
                         <div
-                          key={task.id}
+                          key={`task-${task.id}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedTask(task);
@@ -366,6 +385,41 @@ export default function CalendarView({ initialDate }) {
                           }}
                         >
                           {task.title}
+                        </div>
+                      ))}
+                      {/* Google Calendar Events */}
+                      {getTasksForDate(day).events.map((event) => (
+                        <div
+                          key={`gcal-${event.id || event.googleEventId}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Open in Google Calendar
+                            window.open(`https://calendar.google.com/calendar/r/day/${currentDate.getFullYear()}/${currentDate.getMonth() + 1}/${day}`, '_blank');
+                          }}
+                          className="calendar-task-item google-event"
+                          style={{
+                            fontSize: "0.7rem",
+                            padding: "0.15rem 0.35rem",
+                            background: "rgba(66, 133, 244, 0.25)",
+                            borderRadius: "3px",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            color: "#8ab4f8",
+                            flexShrink: 0,
+                            cursor: "pointer",
+                            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            borderLeft: "2px solid #4285F4",
+                          }}
+                          title={`Google Calendar: ${event.summary || 'Event'}\n${event.startTime ? new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+                            <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V7.5h15v12z" />
+                          </svg>
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{event.summary || 'Event'}</span>
                         </div>
                       ))}
                     </div>
@@ -839,8 +893,6 @@ export default function CalendarView({ initialDate }) {
 
                   const daysTasks = tasks.filter((t) => {
                     if (!t.dueDate) return false;
-                    // Included archived tasks here? User didn't specify, but calendar view usually filters them. 
-                    // Let's match the calendar view logic: "isArchived" check.
                     if (t.isArchived) return false;
 
                     const taskDate = new Date(t.dueDate);
@@ -853,62 +905,156 @@ export default function CalendarView({ initialDate }) {
                     );
                   });
 
-                  if (daysTasks.length === 0) {
+                  // Filter Google Calendar events for this date
+                  const daysEvents = (calendarEvents || []).filter((event) => {
+                    if (!event.startTime) return false;
+                    const eventDate = new Date(event.startTime);
+                    if (isNaN(eventDate.getTime())) return false;
+
+                    return (
+                      eventDate.getDate() === targetDay &&
+                      eventDate.getMonth() === targetMonth &&
+                      eventDate.getFullYear() === targetYear
+                    );
+                  });
+
+                  if (daysTasks.length === 0 && daysEvents.length === 0) {
                     return (
                       <div style={{ textAlign: "center", color: "var(--color-text-muted)", padding: "1rem" }}>
-                        No tasks for this day.
+                        No tasks or events for this day.
                       </div>
                     );
                   }
 
-                  return daysTasks.map(task => (
-                    <div
-                      key={task.id}
-                      onClick={() => {
-                        setSelectedDayList(null); // Close this modal
-                        setSelectedTask(task);    // Open task detail
-                      }}
-                      style={{
-                        padding: "0.75rem",
-                        background: "rgba(255,255,255,0.03)",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid rgba(255,255,255,0.05)",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                        transition: "all 0.2s ease"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                      }}
-                    >
-                      <div style={{
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "50%",
-                        border: task.status === 'done' ? "none" : "2px solid rgba(255,255,255,0.3)",
-                        background: task.status === 'done' ? "var(--color-success)" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0
-                      }}>
-                        {task.status === 'done' && <CheckCircle size={10} color="white" />}
-                      </div>
-                      <span style={{
-                        flex: 1,
-                        fontSize: "0.9rem",
-                        color: task.status === 'done' ? "var(--color-text-muted)" : "var(--color-text-main)",
-                        textDecoration: task.status === 'done' ? "line-through" : "none"
-                      }}>
-                        {task.title}
-                      </span>
-                    </div>
-                  ));
+                  return (
+                    <>
+                      {/* Local Tasks */}
+                      {daysTasks.length > 0 && (
+                        <div style={{ marginBottom: "0.5rem" }}>
+                          <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", marginBottom: "0.25rem", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.05em" }}>Tasks</div>
+                          {daysTasks.map(task => (
+                            <div
+                              key={`task-${task.id}`}
+                              onClick={() => {
+                                setSelectedDayList(null);
+                                setSelectedTask(task);
+                              }}
+                              style={{
+                                padding: "0.75rem",
+                                background: "rgba(255,255,255,0.03)",
+                                borderRadius: "var(--radius-md)",
+                                border: "1px solid rgba(255,255,255,0.05)",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.75rem",
+                                transition: "all 0.2s ease",
+                                marginBottom: "0.35rem"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                              }}
+                            >
+                              <div style={{
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "50%",
+                                border: task.status === 'done' ? "none" : "2px solid rgba(255,255,255,0.3)",
+                                background: task.status === 'done' ? "var(--color-success)" : "transparent",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                              }}>
+                                {task.status === 'done' && <CheckCircle size={10} color="white" />}
+                              </div>
+                              <span style={{
+                                flex: 1,
+                                fontSize: "0.9rem",
+                                color: task.status === 'done' ? "var(--color-text-muted)" : "var(--color-text-main)",
+                                textDecoration: task.status === 'done' ? "line-through" : "none"
+                              }}>
+                                {task.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Google Calendar Events */}
+                      {daysEvents.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: "0.7rem", color: "#8ab4f8", marginBottom: "0.25rem", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V7.5h15v12z" />
+                            </svg>
+                            Google Calendar
+                          </div>
+                          {daysEvents.map(event => (
+                            <div
+                              key={`gcal-${event.id || event.googleEventId}`}
+                              onClick={() => {
+                                window.open(`https://calendar.google.com/calendar/r/day/${targetYear}/${targetMonth + 1}/${targetDay}`, '_blank');
+                              }}
+                              style={{
+                                padding: "0.75rem",
+                                background: "rgba(66, 133, 244, 0.1)",
+                                borderRadius: "var(--radius-md)",
+                                border: "1px solid rgba(66, 133, 244, 0.2)",
+                                borderLeft: "3px solid #4285F4",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.75rem",
+                                transition: "all 0.2s ease",
+                                marginBottom: "0.35rem"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(66, 133, 244, 0.15)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(66, 133, 244, 0.1)";
+                              }}
+                            >
+                              <div style={{
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "50%",
+                                background: "#4285F4",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                              }}>
+                                <Calendar size={10} color="white" />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: "0.9rem",
+                                  color: "#8ab4f8",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap"
+                                }}>
+                                  {event.summary || 'Event'}
+                                </div>
+                                {event.startTime && (
+                                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.15rem" }}>
+                                    {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {event.endTime && ` - ${new Date(event.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                  </div>
+                                )}
+                              </div>
+                              <ExternalLink size={14} style={{ color: "var(--color-text-muted)", flexShrink: 0 }} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
                 })()}
               </div>
             </div>
