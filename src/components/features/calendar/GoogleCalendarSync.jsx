@@ -270,11 +270,17 @@ function CalendarEventItem({ event }) {
   const { addTask } = useTasks();
   const [imported, setImported] = useState(false);
 
+  // Backend returns "startTime" (ISO string), GAPI returned "start.dateTime"
+  // We handle both for robustness, but prioritize backend format.
+  const startTime = event.startTime || (event.start && (event.start.dateTime || event.start.date));
+  const summary = event.summary || event.title || "No Title";
+  const description = event.description || "";
+
   const handleImport = () => {
     addTask({
-      title: event.summary || "No Title",
-      description: (event.description || "") + "\n\n[Imported from Google Calendar]",
-      dueDate: event.start.dateTime ? event.start.dateTime.split('T')[0] : (event.start.date || null),
+      title: summary,
+      description: description + "\n\n[Imported from Google Calendar]",
+      dueDate: startTime ? new Date(startTime).toISOString().split('T')[0] : null,
       context: '@work' // Default context
     });
     setImported(true);
@@ -290,11 +296,11 @@ function CalendarEventItem({ event }) {
     }}>
       <div style={{ overflow: 'hidden', flex: 1, marginRight: '0.5rem' }}>
         <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-text-main)' }}>
-          {event.summary || "No Title"}
+          {summary}
         </div>
         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-          {new Date(event.start.dateTime || event.start.date).toLocaleDateString()}
-          {event.start.dateTime && ` • ${new Date(event.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+          {startTime ? new Date(startTime).toLocaleDateString() : 'No Date'}
+          {startTime && ` • ${new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
         </div>
       </div>
       <button

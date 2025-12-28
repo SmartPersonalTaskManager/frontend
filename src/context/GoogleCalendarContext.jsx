@@ -219,9 +219,9 @@ export function GoogleCalendarProvider({ children }) {
     setIsAuthenticated(false);
   }, []);
 
-  // Fetch events from Google Calendar
+  // Fetch events from Google Calendar (via Backend)
   const fetchCalendarEvents = useCallback(
-    async (timeMin, timeMax) => {
+    async () => {
       if (!isAuthenticated) {
         setError("Not authenticated with Google Calendar");
         return;
@@ -229,30 +229,13 @@ export function GoogleCalendarProvider({ children }) {
 
       setIsLoading(true);
       try {
-        console.log("Fetching calendar events...");
-        // GAPI client initialized?
-        if (!window.gapi.client.calendar) {
-          throw new Error("Google Calendar API not loaded yet.");
-        }
+        console.log("Fetching calendar events from Backend...");
 
-        const request = {
-          calendarId: "primary",
-          timeMin: timeMin || new Date().toISOString(),
-          timeMax:
-            timeMax ||
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          showDeleted: false,
-          singleEvents: true,
-          orderBy: "startTime",
-        };
+        // Trigger sync on backend and get updated events
+        const response = await api.post("/calendar/refresh");
 
-        console.log("Calendar Request:", request);
-
-        const response = await window.gapi.client.calendar.events.list(request);
-        console.log("Calendar Response:", response);
-
-        const events = response.result.items || [];
-        console.log(`Found ${events.length} events.`);
+        const events = response.data || [];
+        console.log(`Found ${events.length} events from backend.`, events);
 
         setCalendarEvents(events);
         setError(null);
