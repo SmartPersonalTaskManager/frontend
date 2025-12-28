@@ -18,9 +18,10 @@ export default function GoogleCalendarLogin() {
   const [connectionError, setConnectionError] = useState(null);
 
   const login = useGoogleLogin({
-    flow: 'auth-code', // KRİTİK: Implicit yerine Auth Code Flow
+    flow: 'auth-code',
     onSuccess: async (response) => {
       console.log("Auth Code received:", response.code);
+      console.log("Scopes granted:", response.scope); // Debug
       setIsConnecting(true);
       setConnectionError(null);
 
@@ -43,9 +44,8 @@ export default function GoogleCalendarLogin() {
       setConnectionError("Google ile giriş başarısız oldu.");
       handleLoginFailure();
     },
-    scope: "https://www.googleapis.com/auth/calendar",
-    prompt: "consent", // Force re-consent to get proper scopes
-    access_type: "offline", // Ensure we get refresh token
+    scope: "openid email profile https://www.googleapis.com/auth/calendar",
+    prompt: "consent",
   });
 
   if (isAuthenticated && googleUser) {

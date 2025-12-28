@@ -55,6 +55,7 @@ export default function GoogleCalendarSync() {
     flow: 'auth-code',
     onSuccess: async (response) => {
       console.log("Auth Code received:", response.code);
+      console.log("Scopes granted:", response.scope); // Debug
       setSyncStatus("linking");
       try {
         await api.post('/calendar/sync', { code: response.code });
@@ -74,9 +75,8 @@ export default function GoogleCalendarSync() {
       console.error("Google Link Error:", err);
       setSyncStatus("error");
     },
-    scope: "https://www.googleapis.com/auth/calendar",
-    prompt: "consent", // Force re-consent to get proper scopes
-    access_type: "offline", // Ensure we get refresh token
+    scope: "openid email profile https://www.googleapis.com/auth/calendar",
+    prompt: "consent",
   });
 
   // Tarih string'ini güvenli şekilde parse eden yardımcı fonksiyon
