@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useGoogleCalendar } from "../../../hooks/useGoogleCalendar";
 import { api } from "../../../services/api";
 import { useTasks } from "../../../context/TaskContext";
-import { Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar, AlertCircle, CheckCircle, Link2 } from "lucide-react";
 import GoogleCalendarLogin from "./GoogleCalendarLogin";
 
 export default function GoogleCalendarSync() {
@@ -21,6 +21,38 @@ export default function GoogleCalendarSync() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncedCount, setSyncedCount] = useState(0);
   const [showLinkButton, setShowLinkButton] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(null); // null = checking, true/false = result
+  const [checkingConnection, setCheckingConnection] = useState(true);
+
+  // Check if user has Google Calendar connection on mount
+  useEffect(() => {
+    const checkGoogleConnection = async () => {
+      if (!isAuthenticated) {
+        setCheckingConnection(false);
+        return;
+      }
+
+      try {
+        // Try to get events - if it fails with "not connected", user needs to connect
+        const response = await api.get('/calendar/events');
+        setIsGoogleConnected(true);
+        setShowLinkButton(false);
+      } catch (err) {
+        console.log("Google Calendar connection check:", err.message);
+        if (err.message && err.message.includes("not connected")) {
+          setIsGoogleConnected(false);
+          setShowLinkButton(true);
+        } else {
+          // Other errors - assume connected but had issue
+          setIsGoogleConnected(true);
+        }
+      } finally {
+        setCheckingConnection(false);
+      }
+    };
+
+    checkGoogleConnection();
+  }, [isAuthenticated]);
 
   const linkGoogleAccount = useGoogleLogin({
     flow: 'auth-code',
@@ -34,6 +66,7 @@ export default function GoogleCalendarSync() {
 
         setSyncStatus("success");
         setShowLinkButton(false);
+        setIsGoogleConnected(true); // Mark as connected
         setTimeout(() => setSyncStatus(null), 3000);
       } catch (err) {
         console.error("Link error:", err);
@@ -185,27 +218,68 @@ export default function GoogleCalendarSync() {
         <h3 style={styles.title}>Calendar Sync</h3>
       </div>
 
+      {/* Connection Status */}
+      {checkingConnection ? (
+        <div style={{ padding: '0.5rem', marginBottom: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+          Checking Google Calendar connection...
+        </div>
+      ) : isGoogleConnected === false ? (
+        <div style={{ padding: '0.75rem', marginBottom: '0.75rem', background: 'rgba(251, 191, 36, 0.1)', border: '1px dashed #f59e0b', borderRadius: '6px' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#f59e0b' }}>
+            ⚠️ Google Calendar is not connected. Connect to sync tasks and import events.
+          </p>
+          <button
+            onClick={() => linkGoogleAccount()}
+            disabled={syncStatus === 'linking'}
+            style={{
+              ...styles.button,
+              backgroundColor: "#FFF",
+              color: "#333",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              width: "100%",
+              opacity: syncStatus === 'linking' ? 0.7 : 1
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4" fillRule="evenodd" />
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18L12.049 13.56c-.806.54-1.836.86-3.049.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853" fillRule="evenodd" />
+              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05" fillRule="evenodd" />
+              <path d="M9 3.58c1.321 0 2.508.455 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" fillRule="evenodd" />
+            </svg>
+            {syncStatus === 'linking' ? 'Connecting...' : 'Connect Google Calendar'}
+          </button>
+        </div>
+      ) : isGoogleConnected === true ? (
+        <div style={{ padding: '0.5rem 0.75rem', marginBottom: '0.75rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', fontSize: '0.8rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <CheckCircle size={16} />
+          Google Calendar connected
+        </div>
+      ) : null}
+
       <div style={styles.buttonGroup}>
         <button
           onClick={handleSyncTasksToCalendar}
-          disabled={isLoading}
+          disabled={isLoading || !isGoogleConnected}
           style={{
             ...styles.button,
-            opacity: isLoading ? 0.6 : 1,
-            cursor: isLoading ? "not-allowed" : "pointer",
+            opacity: (isLoading || !isGoogleConnected) ? 0.6 : 1,
+            cursor: (isLoading || !isGoogleConnected) ? "not-allowed" : "pointer",
           }}
         >
           {isLoading ? "Syncing..." : "Sync Tasks to Calendar"}
         </button>
         <button
           onClick={handleFetchCalendarEvents}
-          disabled={isLoading}
+          disabled={isLoading || !isGoogleConnected}
           style={{
             ...styles.button,
             backgroundColor: "rgba(100, 200, 255, 0.2)",
             borderColor: "rgba(100, 200, 255, 0.5)",
-            opacity: isLoading ? 0.6 : 1,
-            cursor: isLoading ? "not-allowed" : "pointer",
+            opacity: (isLoading || !isGoogleConnected) ? 0.6 : 1,
+            cursor: (isLoading || !isGoogleConnected) ? "not-allowed" : "pointer",
           }}
         >
           {isLoading ? "Fetching..." : "Fetch Calendar Events"}
