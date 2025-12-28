@@ -180,6 +180,11 @@ export function MissionProvider({ children }) {
     };
 
     const deleteMission = async (id, cascadeDeleteTasks = null) => {
+        console.log('🗑️ Attempting to delete mission:', id);
+
+        // Store original state for rollback
+        const originalMissions = [...missions];
+
         // If it's a root mission, cascade to submissions and their tasks
         if (!id.toString().startsWith('submission-')) {
             const submissionRealIds = getSubmissionRealIdsForMission(id);
@@ -204,13 +209,20 @@ export function MissionProvider({ children }) {
         try {
             if (id.toString().startsWith('submission-')) {
                 const realId = id.replace('submission-', '');
+                console.log('📡 Deleting submission from backend:', realId);
                 await api.delete(`/missions/submissions/${realId}`);
+                console.log('✅ Submission deleted successfully from backend');
             } else {
                 const realId = id.toString().replace('mission-', '');
+                console.log('📡 Deleting mission from backend:', realId);
                 await api.delete(`/missions/${realId}`);
+                console.log('✅ Mission deleted successfully from backend');
             }
         } catch (error) {
-            console.error("Failed to delete mission:", error);
+            console.error("❌ Failed to delete mission from backend:", error);
+            // Rollback state on failure
+            console.log('🔄 Rolling back state...');
+            setMissions(originalMissions);
         }
     };
 

@@ -380,11 +380,20 @@ export function GoogleCalendarProvider({ children }) {
     setIsAuthenticated(false);
     setGoogleUser(null);
     setCalendarEvents([]);
+
+    // Clear all auth tokens
     localStorage.removeItem("googleCalendarToken");
-    localStorage.removeItem("googleAccessToken"); // Fix: Clear this too
+    localStorage.removeItem("googleAccessToken");
+
+    // Clear user data
     localStorage.removeItem("sptm_userId");
-    localStorage.removeItem("sptm_user_data"); // Clear persisted user data
-    localStorage.removeItem("sptm_demo_prompt_shown"); // Optional: Reset prompts
+    localStorage.removeItem("sptm_user_data");
+
+    // Clear ALL demo/mock related data to prevent ghost missions
+    localStorage.removeItem("sptm_mock_db");
+    localStorage.removeItem("sptm_has_loaded_demo");
+    localStorage.removeItem("sptm_demo_prompt_shown");
+    localStorage.removeItem("sptm_is_fresh_user");
   }, []);
 
   const value = {
