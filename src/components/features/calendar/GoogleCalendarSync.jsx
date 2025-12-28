@@ -33,19 +33,16 @@ export default function GoogleCalendarSync() {
       }
 
       try {
-        // Try to get events - if it fails with "not connected", user needs to connect
-        const response = await api.get('/calendar/events');
-        setIsGoogleConnected(true);
-        setShowLinkButton(false);
+        // Use the dedicated status endpoint to check connection
+        const response = await api.get('/calendar/status');
+        const connected = response.data?.connected === true;
+        setIsGoogleConnected(connected);
+        setShowLinkButton(!connected);
       } catch (err) {
-        console.log("Google Calendar connection check:", err.message);
-        if (err.message && err.message.includes("not connected")) {
-          setIsGoogleConnected(false);
-          setShowLinkButton(true);
-        } else {
-          // Other errors - assume connected but had issue
-          setIsGoogleConnected(true);
-        }
+        console.log("Google Calendar connection check error:", err.message);
+        // If API call fails, assume not connected
+        setIsGoogleConnected(false);
+        setShowLinkButton(true);
       } finally {
         setCheckingConnection(false);
       }
