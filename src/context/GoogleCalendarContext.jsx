@@ -10,44 +10,9 @@ export function GoogleCalendarProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize Google API
-  useEffect(() => {
-    const initializeGoogle = () => {
-      if (window.gapi) {
-        window.gapi.load("calendar", () => {
-          window.gapi.client.init({
-            apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            scope: "https://www.googleapis.com/auth/calendar",
-            discoveryDocs: [
-              "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
-            ],
-          }).then(() => {
-            // Restore token if available
-            const accessToken = localStorage.getItem("googleAccessToken");
-            if (accessToken) {
-              window.gapi.client.setToken({ access_token: accessToken });
-              setIsAuthenticated(true); // Optimistically set auth
-            }
-          });
-        });
-      }
-    };
-
-    // Load gapi script
-    const script = document.createElement("script");
-    script.src = "https://apis.google.com/js/api.js";
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeGoogle;
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
+  // Note: We no longer need to load the Google API (gapi) script here
+  // because we use backend-based OAuth flow via @react-oauth/google.
+  // All Calendar API calls go through our backend.
 
   // Restore user data from localStorage on mount (CRITICAL for session persistence)
   useEffect(() => {
@@ -116,11 +81,6 @@ export function GoogleCalendarProvider({ children }) {
     try {
       console.log("Implicit Login successful:", tokenResponse);
       const accessToken = tokenResponse.access_token;
-
-      // Set token for GAPI
-      if (window.gapi) {
-        window.gapi.client.setToken({ access_token: accessToken });
-      }
 
       localStorage.setItem("googleAccessToken", accessToken);
 
@@ -196,12 +156,7 @@ export function GoogleCalendarProvider({ children }) {
     const token = user.accessToken || user.credential;
 
     if (token) {
-      // Set token for GAPI client immediately
-      if (window.gapi && window.gapi.client) {
-        window.gapi.client.setToken({ access_token: token });
-      }
-
-      // Persist
+      // Persist token
       localStorage.setItem("googleAccessToken", token);
       // Remove legacy key
       localStorage.removeItem("googleCalendarToken");
@@ -280,7 +235,7 @@ export function GoogleCalendarProvider({ children }) {
     [isAuthenticated]
   );
 
-  // Update event on Google Calendar
+  // Update event on Google Calendar (via backend - TODO: implement if needed)
   const updateCalendarEvent = useCallback(
     async (eventId, event) => {
       if (!isAuthenticated) {
@@ -288,41 +243,15 @@ export function GoogleCalendarProvider({ children }) {
         return null;
       }
 
-      setIsLoading(true);
-      try {
-        const response = await window.gapi.client.calendar.events.update({
-          calendarId: "primary",
-          eventId: eventId,
-          resource: {
-            summary: event.title,
-            description: event.description || "",
-            start: {
-              dateTime: event.startTime,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            end: {
-              dateTime: event.endTime,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            location: event.location || "",
-          },
-        });
-
-        setError(null);
-        await fetchCalendarEvents();
-        return response.result;
-      } catch (err) {
-        setError(`Failed to update calendar event: ${err.message}`);
-        console.error("Update event error:", err);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
+      // TODO: Implement via backend API if needed
+      console.warn("updateCalendarEvent not yet implemented via backend");
+      setError("Update event not yet available");
+      return null;
     },
-    [isAuthenticated, fetchCalendarEvents]
+    [isAuthenticated]
   );
 
-  // Delete event from Google Calendar
+  // Delete event from Google Calendar (via backend - TODO: implement if needed)
   const deleteCalendarEvent = useCallback(
     async (eventId) => {
       if (!isAuthenticated) {
@@ -330,36 +259,17 @@ export function GoogleCalendarProvider({ children }) {
         return false;
       }
 
-      setIsLoading(true);
-      try {
-        await window.gapi.client.calendar.events.delete({
-          calendarId: "primary",
-          eventId: eventId,
-        });
-
-        setError(null);
-        await fetchCalendarEvents();
-        return true;
-      } catch (err) {
-        setError(`Failed to delete calendar event: ${err.message}`);
-        console.error("Delete event error:", err);
-        return false;
-      } finally {
-        setIsLoading(false);
-      }
+      // TODO: Implement via backend API if needed
+      console.warn("deleteCalendarEvent not yet implemented via backend");
+      setError("Delete event not yet available");
+      return false;
     },
-    [isAuthenticated, fetchCalendarEvents]
+    [isAuthenticated]
   );
 
   // Logout from Google
   const logout = useCallback(() => {
-    if (window.gapi?.auth2) {
-      const auth2 = window.gapi.auth2.getAuthInstance();
-      if (auth2) {
-        auth2.signOut();
-      }
-    }
-    // Also revoke token manually if needed, but simple clearing state is enough for UI
+    // Clear local state
     setIsAuthenticated(false);
     setGoogleUser(null);
     setCalendarEvents([]);
