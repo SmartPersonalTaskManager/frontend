@@ -44,6 +44,8 @@ export default function GoogleCalendarLogin() {
       handleLoginFailure();
     },
     scope: "https://www.googleapis.com/auth/calendar",
+    prompt: "consent", // Force re-consent to get proper scopes
+    access_type: "offline", // Ensure we get refresh token
   });
 
   if (isAuthenticated && googleUser) {

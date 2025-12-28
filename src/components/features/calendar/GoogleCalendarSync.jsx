@@ -75,6 +75,8 @@ export default function GoogleCalendarSync() {
       setSyncStatus("error");
     },
     scope: "https://www.googleapis.com/auth/calendar",
+    prompt: "consent", // Force re-consent to get proper scopes
+    access_type: "offline", // Ensure we get refresh token
   });
 
   // Tarih string'ini güvenli şekilde parse eden yardımcı fonksiyon
