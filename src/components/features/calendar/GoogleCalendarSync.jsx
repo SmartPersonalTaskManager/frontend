@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useGoogleCalendar } from "../../../hooks/useGoogleCalendar";
 import { useTasks } from "../../../context/TaskContext";
-import { Calendar, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
+import { Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import GoogleCalendarLogin from "./GoogleCalendarLogin";
 
 export default function GoogleCalendarSync() {
   const {
@@ -143,8 +144,9 @@ export default function GoogleCalendarSync() {
     }
   };
 
+  // !!! CHANGE HERE: Render Login component if not authenticated !!!
   if (!isAuthenticated) {
-    return null;
+    return <GoogleCalendarLogin />;
   }
 
   return (
