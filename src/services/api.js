@@ -1,4 +1,5 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
+console.log("API Base URL:", BASE_URL);
 
 // Timeout wrapper for fetch
 const fetchWithTimeout = async (url, options, timeout = 30000) => {
@@ -132,7 +133,21 @@ export const api = {
             headers: getHeaders(),
             body: JSON.stringify(body),
         });
-        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+        if (!response.ok) {
+            let msg = response.statusText;
+            try {
+                const text = await response.text();
+                // Check if it's JSON error
+                try {
+                    const json = JSON.parse(text);
+                    if (json.error) msg += ` - ${json.error}`;
+                    else msg += ` - ${text}`;
+                } catch {
+                    if (text) msg += ` - ${text}`;
+                }
+            } catch (e) { }
+            throw new Error(`API Error: ${msg}`);
+        }
         return response.json();
     },
 
