@@ -4,7 +4,7 @@ import useVoiceInput from '../../../hooks/useVoiceInput';
 import { Plus, Zap, Mic, Trash2, X } from 'lucide-react';
 import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
-export default function QuickInboxModal({ onClose, onCaptureSelect, excludeIds = [] }) {
+export default function QuickInboxModal({ onClose, onCaptureSelect }) {
     const { tasks, addTask, updateTask, deletePermanently } = useTasks();
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useVoiceInput();
     const [quickInput, setQuickInput] = useState('');
