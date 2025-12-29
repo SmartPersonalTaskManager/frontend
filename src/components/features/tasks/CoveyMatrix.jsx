@@ -12,7 +12,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { CHARACTER_LIMITS } from '../../../constants/characterLimits';
 
 export default function CoveyMatrix() {
-    const { tasks, addTask, updateTask, deletePermanently, contexts } = useTasks();
+    const { tasks, addTask, contexts } = useTasks();
     const [showForm, setShowForm] = useState(false);
     const [viewMode, setViewMode] = useState('list');
     const [selectedTask, setSelectedTask] = useState(null);
@@ -32,22 +32,20 @@ export default function CoveyMatrix() {
         setShowForm(true);
     };
 
+    // Track which captures have been converted to tasks (local state, doesn't affect tasks array)
+    const [convertedCaptureIds, setConvertedCaptureIds] = useState([]);
 
-
-    // Handle task save - update existing inbox task if converting, otherwise add new
+    // Handle task save - just add capture ID to converted list
     const handleTaskSave = (taskData) => {
         const captureId = selectedCaptureId;
 
+        // Add the new task
+        addTask(taskData);
+
+        // If this was from a capture, add its ID to the converted list
+        // This will filter it out from Quick Inbox display
         if (captureId) {
-            // Converting from inbox - update the existing task instead of creating new
-            updateTask(captureId, {
-                ...taskData,
-                isInbox: false,
-                isArchived: false
-            });
-        } else {
-            // New task - add normally
-            addTask(taskData);
+            setConvertedCaptureIds(prev => [...prev, captureId]);
         }
 
         // Clear the capture ID
@@ -276,7 +274,7 @@ export default function CoveyMatrix() {
                         >
                             <Zap size={20} color="#f59e0b" fill="#f59e0b" /> Quick Inbox
                         </button>
-                        {showQuickInbox && <QuickInboxModal onClose={() => setShowQuickInbox(false)} onCaptureSelect={handleCaptureSelect} />}
+                        {showQuickInbox && <QuickInboxModal onClose={() => setShowQuickInbox(false)} onCaptureSelect={handleCaptureSelect} excludeIds={convertedCaptureIds} />}
                     </div>
 
                     {/* New Task */}

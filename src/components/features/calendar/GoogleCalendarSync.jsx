@@ -124,8 +124,20 @@ export default function GoogleCalendarSync() {
     console.log("Tasks:", tasks);
 
     try {
-      // Tarihli görev sayısını kontrol et
+      // Tarihli görev sayısını kontrol et (arşivlenmiş ve inbox task'ları hariç tut)
       const tasksWithDates = tasks.filter(task => {
+        // Skip archived tasks
+        if (task.isArchived) {
+          console.log(`Task "${task.title}": Skipped (archived)`);
+          return false;
+        }
+
+        // Skip inbox tasks
+        if (task.isInbox) {
+          console.log(`Task "${task.title}": Skipped (inbox)`);
+          return false;
+        }
+
         const hasDate = task.dueDate && task.dueDate !== "";
         const parsedDate = parseDateSafely(task.dueDate);
 

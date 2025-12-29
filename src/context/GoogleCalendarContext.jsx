@@ -116,29 +116,23 @@ export function GoogleCalendarProvider({ children }) {
     try {
       console.log("Auth Code Login successful:", codeResponse);
 
-      // Auth code flow'da, backend code'u işledikten sonra access token almak için
-      // Google'ın userinfo endpoint'ini kullanamayız çünkü token backend'de.
-      // Bunun yerine basit bir şekilde code'un varlığını kontrol edip,
-      // kullanıcıyı authenticated olarak işaretliyoruz.
+      // Auth code flow'da, backend code'u işledikten sonra token exchange yapıyor.
+      // Kullanıcı bilgilerini DEĞİŞTİRMİYORUZ - mevcut login bilgileri korunuyor.
+      // Sadece Google Calendar bağlantısının başarılı olduğunu işaretliyoruz.
 
-      // Google OAuth popup'ı kapatıldığında code response'ta email bilgisi olmayabilir,
-      // bu yüzden backend'den veya başka bir yoldan user info alabiliriz.
-      // Şimdilik basit bir yaklaşım kullanıyoruz:
-
-      setGoogleUser({
-        name: "Google Calendar User",
-        email: "Connected via Auth Code",
-        picture: null,
+      // Mevcut kullanıcı bilgilerini koru, sadece authCode ekle
+      setGoogleUser(prev => ({
+        ...prev,
+        googleCalendarConnected: true,
         authCode: codeResponse.code,
-      });
+      }));
 
-      setIsAuthenticated(true);
       setError(null);
 
-      console.log("Auth Code Flow: User authenticated successfully. Backend will handle token exchange.");
+      console.log("Auth Code Flow: Google Calendar connected successfully. User info preserved.");
 
     } catch (err) {
-      setError("Failed to authenticate with Google");
+      setError("Failed to connect Google Calendar");
       console.error("Auth Code Login error:", err);
     }
   }, []);
